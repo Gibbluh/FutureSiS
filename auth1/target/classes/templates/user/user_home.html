@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>User Home</title>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px;">
+        <h2>User Dashboard</h2>
+        <p>Welcome, <span th:text="${#authentication.name}"></span>!</p>
+        <p>You have USER privileges.</p>
+        
+        <form th:action="@{/user/logout}" method="post" style="margin-top: 20px;">
+            <button type="submit">Logout</button>
+        </form>
+    </div>
+</body>
+</html>
