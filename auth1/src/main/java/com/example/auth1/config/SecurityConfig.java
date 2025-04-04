@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -19,7 +20,7 @@ public class SecurityConfig {
     private final CustomStudentDetailsService studentDetailsService;
 
     public SecurityConfig(CustomAdminDetailsService adminDetailsService,
-                         CustomStudentDetailsService studentDetailsService) {
+                        CustomStudentDetailsService studentDetailsService) {
         this.adminDetailsService = adminDetailsService;
         this.studentDetailsService = studentDetailsService;
     }
@@ -52,18 +53,27 @@ public class SecurityConfig {
             .securityMatcher("/admin/**")
             .authenticationProvider(adminAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().hasRole("ADMIN")
+                .requestMatchers("/admin/login", "/admin/students/add").permitAll()
+                .anyRequest().hasAuthority("ROLE_ADMIN")
             )
             .formLogin(form -> form
                 .loginPage("/admin/login")
                 .usernameParameter("email")
+                .passwordParameter("password")
                 .loginProcessingUrl("/admin/login")
-                .defaultSuccessUrl("/admin/home")
+                .defaultSuccessUrl("/admin/home", true)
+                .failureUrl("/admin/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/admin/logout")
-                .logoutSuccessUrl("/")
+                .logoutSuccessUrl("/?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedPage("/access-denied")
             );
 
         return http.build();
@@ -76,19 +86,27 @@ public class SecurityConfig {
             .securityMatcher("/student/**")
             .authenticationProvider(studentAuthenticationProvider())
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().hasRole("STUDENT")
+                .requestMatchers("/student/login").permitAll()
+                .anyRequest().hasAuthority("ROLE_STUDENT")
             )
             .formLogin(form -> form
                 .loginPage("/student/login")
-                .usernameParameter("studentNumber") // Make sure this matches the form field name
+                .usernameParameter("studentNumber")
+                .passwordParameter("password")
                 .loginProcessingUrl("/student/login")
-                .defaultSuccessUrl("/student/home")
-                .failureUrl("/student/login?error=true") // Add this to see login failures
+                .defaultSuccessUrl("/student/home", true)
+                .failureUrl("/student/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 .logoutUrl("/student/logout")
-                .logoutSuccessUrl("/")
+                .logoutSuccessUrl("/?logout")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            )
+            .exceptionHandling(ex -> ex
+                .accessDeniedPage("/access-denied")
             );
 
         return http.build();
@@ -99,10 +117,23 @@ public class SecurityConfig {
     public SecurityFilterChain publicFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/css/**", "/js/**", "/images/**",
-                                "/admin/login", "/student/login").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/css/**",
+                    "/js/**",
+                    "/images/**",
+                    "/error",
+                    "/access-denied"
+                ).permitAll()
                 .anyRequest().authenticated()
-            );
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers(
+                    new AntPathRequestMatcher("/admin/login", "POST"),
+                    new AntPathRequestMatcher("/student/login", "POST"),
+                    new AntPathRequestMatcher("/admin/students/add", "POST"),
+                    new AntPathRequestMatcher("/admin/students/delete/**", "POST")
+                ));
 
         return http.build();
     }
