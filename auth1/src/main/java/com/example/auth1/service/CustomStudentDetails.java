@@ -34,5 +34,5 @@ public class CustomStudentDetails implements UserDetails {
         return student.getStudentNumber();
     }
 
-    // ... (implement other UserDetails methods)
+   
 }
