@@ -31,6 +31,10 @@ public class Student {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.STUDENT;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "year_level")
+    private YearLevel yearLevel;
    
     @Column(nullable = false)
     private LocalDate enrollmentDate = LocalDate.now();
@@ -41,6 +45,10 @@ public class Student {
    
     @Column(nullable = false)
     private boolean active = true;
+
+    @ManyToOne
+    @JoinColumn(name = "program_id")
+    private Program program;
 
     // Constructors
     public Student() {
@@ -119,6 +127,14 @@ public class Student {
     public void setRole(Role role) {
         this.role = role;
     }
+    
+    public YearLevel getYearLevel() {
+        return yearLevel;
+    }
+    
+    public void setYearLevel(YearLevel yearLevel) {
+        this.yearLevel = yearLevel;
+    }
 
     public LocalDate getEnrollmentDate() {
         return enrollmentDate;
@@ -152,6 +168,14 @@ public class Student {
         this.active = active;
     }
 
+    public Program getProgram() {
+        return program;
+    }
+
+    public void setProgram(Program program) {
+        this.program = program;
+    }
+
     @Override
     public String toString() {
         return "Student{" +
@@ -160,6 +184,7 @@ public class Student {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", email='" + email + '\'' +
+                ", yearLevel=" + yearLevel +
                 ", role=" + role +
                 '}';
     }

@@ -24,9 +24,11 @@ public class CustomStudentDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Get birthdate from request parameters
-        String birthDate = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes())
-                .getRequest()
-                .getParameter("birthDate");
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            throw new UsernameNotFoundException("Request attributes are not available");
+        }
+        String birthDate = attributes.getRequest().getParameter("birthDate");
 
         Student student = studentRepository.findByStudentNumber(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Student not found"));
