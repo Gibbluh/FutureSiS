@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Student Grades</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Grades for <span th:text="${student.firstName + ' ' + student.lastName}"></span></h2>
+        <p>Student Number: <span th:text="${student.studentNumber}"></span></p>
+        <p>Program: <span th:text="${student.program != null ? student.program.name : 'Not assigned'}"></span></p>
+
+        <a th:href="@{'/admin/students/' + ${student.id} + '/grades/add'}" class="btn btn-primary mb-3">Add Grade</a>
+
+        <div th:if="${gradesByYearAndSemester == null || gradesByYearAndSemester.isEmpty()}" class="alert alert-info">
+            No grades found for this student.
+        </div>
+
+        <div th:each="yearEntry : ${gradesByYearAndSemester}" th:if="${yearEntry.value != null}">
+            <h3>School Year: <span th:text="${yearEntry.key}"></span></h3>
+            <div th:each="semesterEntry : ${yearEntry.value}" th:if="${semesterEntry.value != null}">
+                <h4>Semester: <span th:text="${semesterEntry.key}"></span></h4>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Score</th>
+                            <th>Equivalent</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="grade : ${semesterEntry.value}" th:if="${grade != null}">
+                            <td th:text="${grade.subject != null ? grade.subject.name : 'N/A'}"></td>
+                            <td th:text="${grade.score}"></td>
+                            <td th:text="${grade.equivalent != null ? grade.equivalent : 'N/A'}"></td>
+                            <td th:text="${grade.description != null ? grade.description : 'N/A'}"></td>
+                            <td>
+                                <a th:href="@{'/admin/grades/edit/' + ${grade.id}}" class="btn btn-warning btn-sm">Edit</a>
+                                <form th:action="@{'/admin/grades/delete/' + ${grade.id}}" method="post" style="display: inline;">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this grade?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>GWA for Semester:</strong> <span th:text="${gwaByYearAndSemester[yearEntry.key][semesterEntry.key] != null ? gwaByYearAndSemester[yearEntry.key][semesterEntry.key] : 'N/A'}"></span></p>
+            </div>
+        </div>
+
+        <a th:href="@{/admin/home}" class="btn btn-secondary">Back to Admin Home</a>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

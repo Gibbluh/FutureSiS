@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Program</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .semester-card {
+            border-left: 4px solid #4CAF50;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .semester-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0">Edit Program</h2>
+            </div>
+            
+            <div class="card-body">
+                <form th:action="@{'/admin/programs/edit/' + ${program.id}}" method="post">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Program Name</label>
+                        <input type="text" class="form-control" name="name" 
+                               th:value="${program.name}" required>
+                    </div>
+                    
+                    <h4 class="mb-3">4-Year Course Structure</h4>
+                    
+                    <!-- Year Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="yearTabs" role="tablist">
+                        <li class="nav-item" th:each="year : ${#numbers.sequence(1, 4)}">
+                            <a class="nav-link" th:classappend="${year == 1} ? 'active'" 
+                               th:id="'year'+${year}+'-tab'" data-bs-toggle="tab" 
+                               th:href="'#year'+${year}" role="tab" 
+                               th:text="'Year '+${year}"></a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Semester Panels -->
+                    <div class="tab-content" id="yearTabsContent">
+                        <div th:each="year : ${#numbers.sequence(1, 4)}" class="tab-pane fade" 
+                             th:classappend="${year == 1} ? 'show active'" 
+                             th:id="'year'+${year}" role="tabpanel">
+                            <div class="row">
+                                <div th:each="semester : ${#numbers.sequence(1, 2)}" class="col-md-6">
+                                    <div class="card semester-card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                Semester <span th:text="${semester}"></span>
+                                            </h5>
+                                            <div th:if="${program.courses != null}">
+                                                <div th:each="course : ${program.courses}">
+                                                    <div th:if="${course.year == year and course.semester == semester}">
+                                                        <a th:href="@{'/admin/courses/' + ${course.id} + '/subjects'}" 
+                                                           class="btn btn-sm btn-primary">
+                                                            Manage Subjects
+                                                            <span th:if="${course.subjects != null}" 
+                                                                  class="badge bg-white text-primary ms-2" 
+                                                                  th:text="${course.subjects.size()}"></span>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a th:href="@{/admin/programs}" class="btn btn-secondary">
+                            ← Back to Programs
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Update Program
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
