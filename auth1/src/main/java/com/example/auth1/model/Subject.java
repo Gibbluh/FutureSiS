@@ -1,6 +1,7 @@
 package com.example.auth1.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "subjects")
@@ -18,8 +19,9 @@ public class Subject {
     @Column(nullable = false)
     private int units;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = false)
+    @JsonIgnoreProperties({"subjects", "program"})
     private Course course;
     
     // Constructors
@@ -71,5 +73,11 @@ public class Subject {
     
     public void setCourse(Course course) {
         this.course = course;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Subject[id=%d, code=%s, name=%s, units=%d]",
+            id, code, name, units);
     }
 }

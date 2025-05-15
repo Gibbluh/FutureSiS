@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Component
 public class DatabaseLoader implements CommandLineRunner {
@@ -54,34 +56,24 @@ public class DatabaseLoader implements CommandLineRunner {
         );
         adminRepository.saveAll(admins);
 
-        // 2. Create sample programs with full 4-year structure
+        // 2. Create programs with complete curriculum
+        Map<String, Map<Integer, Map<Integer, List<String>>>> curriculumData = createCurriculumData();
+        
         List<Program> programs = List.of(
-            createProgramWithCourses("Computer Science", List.of(
-                "Introduction to Programming",
-                "Discrete Mathematics",
-                "Computer Fundamentals"
-            )),
-            createProgramWithCourses("Business Administration", List.of(
-                "Principles of Management",
-                "Business Economics",
-                "Accounting Fundamentals"
-            )),
-            createProgramWithCourses("Electrical Engineering", List.of(
-                "Circuit Theory",
-                "Electronics Fundamentals",
-                "Engineering Mathematics"
-            ))
+            createProgramWithFullCurriculum("Computer Science", curriculumData.get("Computer Science")),
+            createProgramWithFullCurriculum("Business Administration", curriculumData.get("Business Administration")),
+            createProgramWithFullCurriculum("Electrical Engineering", curriculumData.get("Electrical Engineering"))
         );
         programRepository.saveAll(programs);
 
-        // 3. Create sample students with program assignments
+        // 3. Create sample students
         List<Student> students = List.of(
             createStudent("STU-2023-00001", "John", "Doe", "john.doe@school.edu", 
-                         LocalDate.of(2000, 5, 15), programs.get(0)),
+                         LocalDate.of(2000, 5, 15), programs.get(0), 1, 1),
             createStudent("STU-2023-00002", "Jane", "Smith", "jane.smith@school.edu", 
-                         LocalDate.of(2001, 6, 20), programs.get(1)),
+                         LocalDate.of(2001, 6, 20), programs.get(1), 2, 1),
             createStudent("STU-2023-00003", "Mike", "Johnson", "mike.johnson@school.edu", 
-                         LocalDate.of(1999, 7, 10), programs.get(2))
+                         LocalDate.of(1999, 7, 10), programs.get(2), 1, 1)
         );
         studentRepository.saveAll(students);
 
@@ -93,33 +85,147 @@ public class DatabaseLoader implements CommandLineRunner {
         System.out.println("Students: " + students.size());
     }
 
-    private Program createProgramWithCourses(String name, List<String> firstYearSubjects) {
-        Program program = new Program(name);
-        program = programRepository.save(program);
+    private Map<String, Map<Integer, Map<Integer, List<String>>>> createCurriculumData() {
+        Map<String, Map<Integer, Map<Integer, List<String>>>> curriculum = new HashMap<>();
+        
+        // Computer Science Curriculum
+        Map<Integer, Map<Integer, List<String>>> csYears = new HashMap<>();
+        csYears.put(1, Map.of(
+            1, List.of(
+                "Introduction to Programming",
+                "Computer Fundamentals",
+                "Mathematics for Computing",
+                "English Communication",
+                "Physical Education 1"
+            ),
+            2, List.of(
+                "Object-Oriented Programming",
+                "Discrete Mathematics",
+                "Data Structures",
+                "Technical Writing",
+                "Physical Education 2"
+            )
+        ));
+        csYears.put(2, Map.of(
+            1, List.of(
+                "Database Management Systems",
+                "Web Development",
+                "Computer Architecture",
+                "Probability and Statistics",
+                "Filipino 1"
+            ),
+            2, List.of(
+                "Advanced Database Systems",
+                "Operating Systems",
+                "Software Engineering",
+                "Network Fundamentals",
+                "Filipino 2"
+            )
+        ));
+        curriculum.put("Computer Science", csYears);
 
-        // Create 4 years with 2 semesters each
-        for (int year = 1; year <= 4; year++) {
-            for (int semester = 1; semester <= 2; semester++) {
-                Course course = new Course(year, semester, program);
+        // Business Administration Curriculum
+        Map<Integer, Map<Integer, List<String>>> baYears = new HashMap<>();
+        baYears.put(1, Map.of(
+            1, List.of(
+                "Principles of Management",
+                "Basic Economics",
+                "Business Mathematics",
+                "Communication Arts",
+                "Physical Education 1"
+            ),
+            2, List.of(
+                "Business Economics",
+                "Accounting Fundamentals",
+                "Marketing Principles",
+                "Business Communication",
+                "Physical Education 2"
+            )
+        ));
+        baYears.put(2, Map.of(
+            1, List.of(
+                "Financial Management",
+                "Business Law",
+                "Organizational Behavior",
+                "Management Accounting",
+                "Filipino 1"
+            ),
+            2, List.of(
+                "Strategic Management",
+                "Operations Management",
+                "Human Resource Management",
+                "Business Research",
+                "Filipino 2"
+            )
+        ));
+        curriculum.put("Business Administration", baYears);
+
+        // Electrical Engineering Curriculum
+        Map<Integer, Map<Integer, List<String>>> eeYears = new HashMap<>();
+        eeYears.put(1, Map.of(
+            1, List.of(
+                "Engineering Mathematics 1",
+                "Physics for Engineers",
+                "Engineering Drawing",
+                "Chemistry for Engineers",
+                "Physical Education 1"
+            ),
+            2, List.of(
+                "Engineering Mathematics 2",
+                "Circuit Theory",
+                "Electronics 1",
+                "Programming for Engineers",
+                "Physical Education 2"
+            )
+        ));
+        eeYears.put(2, Map.of(
+            1, List.of(
+                "Engineering Mathematics 3",
+                "Electronics 2",
+                "Digital Logic Design",
+                "Electrical Machines",
+                "Filipino 1"
+            ),
+            2, List.of(
+                "Control Systems",
+                "Power Systems",
+                "Microprocessors",
+                "Electromagnetics",
+                "Filipino 2"
+            )
+        ));
+        curriculum.put("Electrical Engineering", eeYears);
+
+        return curriculum;
+    }
+
+    private Program createProgramWithFullCurriculum(String name, Map<Integer, Map<Integer, List<String>>> yearData) {
+        final Program program = new Program(name);
+        final Program savedProgram = programRepository.save(program);
+
+        // Create courses and subjects for each year and semester
+        yearData.forEach((year, semesterData) -> {
+            semesterData.forEach((semester, subjects) -> {
+                Course course = new Course(year, semester, savedProgram);
                 course = courseRepository.save(course);
+                addSubjectsToCourse(course, subjects);
+            });
+        });
 
-                // Add sample subjects to first year first semester
-                if (year == 1 && semester == 1) {
-                    addSubjectsToCourse(course, firstYearSubjects);
-                }
-            }
-        }
-        return program;
+        return savedProgram;
     }
 
     private void addSubjectsToCourse(Course course, List<String> subjectNames) {
         String programPrefix = course.getProgram().getName().substring(0, 3).toUpperCase();
-        int subjectCode = 101; // Starting course code
+        int year = course.getYear();
+        int semester = course.getSemester();
+        int baseCode = (year * 100) + (semester * 10);
         
-        for (String subjectName : subjectNames) {
+        for (int i = 0; i < subjectNames.size(); i++) {
+            String subjectCode = String.format("%s%d", programPrefix, baseCode + i + 1);
             Subject subject = new Subject(
-                programPrefix + subjectCode++,
-                subjectName,
+                subjectCode,
+                subjectNames.get(i),
                 3, // Default 3 units
                 course
             );
@@ -128,7 +234,8 @@ public class DatabaseLoader implements CommandLineRunner {
     }
 
     private Student createStudent(String studentNumber, String firstName, String lastName, 
-                                String email, LocalDate birthDate, Program program) {
+                                String email, LocalDate birthDate, Program program,
+                                int enrollmentYear, int currentSemester) {
         Student student = new Student();
         student.setStudentNumber(studentNumber);
         student.setFirstName(firstName);
@@ -138,6 +245,9 @@ public class DatabaseLoader implements CommandLineRunner {
         student.setPassword(passwordEncoder.encode("Student123!"));
         student.setRole(Role.STUDENT);
         student.setProgram(program);
+        student.setEnrollmentYear(enrollmentYear);
+        student.setCurrentSemester(currentSemester);
+        student.setEnrollmentDate(LocalDate.now());
         return student;
     }
 }

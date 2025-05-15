@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Student</title>
     <style>
         :root {
@@ -189,20 +189,11 @@
                 </div>
             </div>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="phoneNumber">Phone Number:</label>
-                    <input type="tel" id="phoneNumber" name="phoneNumber" 
-                           th:value="${student.phoneNumber}"
-                           pattern="[0-9\-\+\(\) ]+" title="Enter a valid phone number">
-                </div>
-                
-                <div class="form-group">
-                    <label for="password">Password (leave blank to keep current):</label>
-                    <input type="password" id="password" name="password"
-                           minlength="8" pattern="^(?=.*[A-Za-z])(?=.*\d).{8,}$"
-                           title="Minimum 8 characters, at least one letter and one number">
-                </div>
+            <div class="form-group">
+                <label for="phoneNumber">Phone Number:</label>
+                <input type="tel" id="phoneNumber" name="phoneNumber" 
+                       th:value="${student.phoneNumber}"
+                       pattern="[0-9\-\+\(\) ]+" title="Enter a valid phone number">
             </div>
             
             <div class="form-group">
@@ -212,8 +203,8 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="program">Program:</label>
-                    <select id="program" name="programId" required>
+                    <label for="programId">Program:</label>
+                    <select id="programId" name="programId" required>
                         <option value="">-- Select Program --</option>
                         <option th:each="program : ${programs}" 
                                 th:value="${program.id}" 
@@ -224,16 +215,31 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="enrollmentYear">Enrollment Year:</label>
+                    <label for="enrollmentYear">Year Level:</label>
                     <select id="enrollmentYear" name="enrollmentYear" required>
-                        <option value="">-- Select Year --</option>
-                        <option th:each="year : ${enrollmentYears}" 
-                                th:value="${year}" 
-                                th:text="${year}"
-                                th:selected="${student.enrollmentDate != null && student.enrollmentDate.year == year}">
-                        </option>
+                        <option value="">-- Select Year Level --</option>
+                        <option value="1" th:selected="${student.enrollmentYear == 1}">1st Year - Freshmen</option>
+                        <option value="2" th:selected="${student.enrollmentYear == 2}">2nd Year - Sophomore</option>
+                        <option value="3" th:selected="${student.enrollmentYear == 3}">3rd Year - Junior</option>
+                        <option value="4" th:selected="${student.enrollmentYear == 4}">4th Year - Senior</option>
                     </select>
                 </div>
+
+                <div class="form-group">
+                    <label for="currentSemester">Current Semester:</label>
+                    <select id="currentSemester" name="currentSemester" required>
+                        <option value="1" th:selected="${student.currentSemester == 1}">1st Semester</option>
+                        <option value="2" th:selected="${student.currentSemester == 2}">2nd Semester</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="enrollmentDate">Enrollment Date:</label>
+                <input type="date" id="enrollmentDate" name="enrollmentDate" required
+                       th:value="${student.enrollmentDate}"
+                       th:max="${T(java.time.LocalDate).now().toString()}"
+                       th:min="${T(java.time.LocalDate).now().minusYears(10).toString()}">
             </div>
             
             <div class="btn-container">
@@ -249,17 +255,17 @@
     <script>
         // Client-side form validation
         document.getElementById('studentForm').addEventListener('submit', function(e) {
-            const password = document.getElementById('password').value;
-            if (password && password.length < 8) {
-                alert('Password must be at least 8 characters long');
+            // Validation for phone number
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            if (phoneNumber && !phoneNumber.match(/^[0-9\-\+\(\) ]+$/)) {
+                alert('Please enter a valid phone number');
                 e.preventDefault();
                 return false;
             }
             
-            // Additional validation for other fields can be added here
-            const phoneNumber = document.getElementById('phoneNumber').value;
-            if (phoneNumber && !phoneNumber.match(/^[0-9\-\+\(\) ]+$/)) {
-                alert('Please enter a valid phone number');
+            const enrollmentYear = document.getElementById('enrollmentYear').value;
+            if (!enrollmentYear) {
+                alert('Please select a year level');
                 e.preventDefault();
                 return false;
             }

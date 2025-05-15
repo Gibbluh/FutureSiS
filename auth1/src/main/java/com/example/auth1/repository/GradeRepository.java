@@ -1,21 +1,25 @@
 package com.example.auth1.repository;
 
-import java.util.List;
-import com.example.auth1.model.*;
-
+import com.example.auth1.model.Grade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
 
+@Repository
 public interface GradeRepository extends JpaRepository<Grade, Long> {
-    List<Grade> findBySubjectId(Long subjectId);
-    List<Grade> findByStudentId(Long studentId); // Add this method
-    Grade findByStudentIdAndSubjectIdAndYearAndSemester(
-        Long studentId, Long subjectId, int year, int semester);
-    
-    @Query("SELECT g FROM Grade g WHERE g.subject.id = :subjectId AND g.year = :year AND g.semester = :semester")
-    List<Grade> findBySubjectAndSemester(
-        @Param("subjectId") Long subjectId,
-        @Param("year") int year,
-        @Param("semester") int semester);
-}
+    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId AND g.academicYear = :academicYear AND g.semester = :semester")
+    List<Grade> findByStudentIdAndAcademicYearAndSemesterWithSubject(
+        @Param("studentId") Long studentId, 
+        @Param("academicYear") String academicYear, 
+        @Param("semester") Integer semester);
+        
+    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId AND g.subject.id = :subjectId")
+    Optional<Grade> findByStudentIdAndSubjectId(
+        @Param("studentId") Long studentId, 
+        @Param("subjectId") Long subjectId);
+
+    List<Grade> findByStudentId(Long studentId);
+} 
