@@ -21,7 +21,7 @@ public class Subject {
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "course_id", nullable = false)
-    @JsonIgnoreProperties({"subjects", "program"})
+    @JsonIgnoreProperties("subjects")
     private Course course;
     
     // Constructors

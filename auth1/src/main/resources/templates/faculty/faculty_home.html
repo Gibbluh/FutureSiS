@@ -54,6 +54,25 @@
             font-weight: bold;
             color: #666;
         }
+        .departments-section, .subjects-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .department-item, .subject-item {
+            padding: 10px;
+            margin: 5px 0;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .section-title {
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
     </style>
 </head>
 <body>
@@ -73,16 +92,35 @@
 
         <div class="faculty-info">
             <p><span class="label">Faculty ID:</span> <span th:text="${faculty.facultyId}"></span></p>
-            <p><span class="label">Department:</span> <span th:text="${faculty.program.name}"></span></p>
             <p><span class="label">Position:</span> <span th:text="${faculty.position}"></span></p>
             <p><span class="label">Email:</span> <span th:text="${faculty.email}"></span></p>
             <p><span class="label">Phone:</span> <span th:text="${faculty.phoneNumber}"></span></p>
         </div>
 
-        <!-- Placeholder for future functionality -->
-        <div class="actions-section">
-            <h3>Quick Actions</h3>
-            <p>More features coming soon...</p>
+        <div class="departments-section">
+            <h3 class="section-title">Assigned Departments</h3>
+            <div th:if="${faculty.facultyPrograms.empty}" class="department-item">
+                No departments assigned yet.
+            </div>
+            <div th:each="fp : ${faculty.facultyPrograms}" class="department-item">
+                <span th:text="${fp.program.name}">Department Name</span>
+            </div>
+        </div>
+
+        <div class="subjects-section">
+            <h3 class="section-title">Teaching Assignments</h3>
+            <div th:if="${faculty.teachingAssignments.empty}" class="subject-item">
+                No subjects assigned yet.
+            </div>
+            <div th:each="assignment : ${faculty.teachingAssignments}" class="subject-item">
+                <p>
+                    <strong th:text="${assignment.subject.code + ' - ' + assignment.subject.name}">Subject Code - Name</strong>
+                    <br>
+                    <small th:text="${'Academic Year: ' + assignment.academicYear + ', Semester: ' + assignment.semester}">
+                        Academic Year and Semester
+                    </small>
+                </p>
+            </div>
         </div>
     </div>
 </body>

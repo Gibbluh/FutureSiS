@@ -259,9 +259,12 @@ public class DatabaseLoader implements CommandLineRunner {
         faculty.setEmail(email);
         faculty.setPosition(position);
         faculty.setPhoneNumber(phoneNumber);
-        faculty.setProgram(program);
         faculty.setPassword(passwordEncoder.encode(password));
         faculty.setRole(Role.FACULTY);
+        
+        // Add the program using the new relationship
+        faculty.addProgram(program);
+        
         return faculty;
     }
 

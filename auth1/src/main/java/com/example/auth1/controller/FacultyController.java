@@ -1,9 +1,9 @@
 package com.example.auth1.controller;
 
-import com.example.auth1.model.Faculty;
-import com.example.auth1.model.Program;
-import com.example.auth1.repository.FacultyRepository;
-import com.example.auth1.repository.ProgramRepository;
+import com.example.auth1.model.*;
+import com.example.auth1.repository.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +12,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Controller
 @RequestMapping("/admin/faculty")
@@ -19,13 +21,23 @@ public class FacultyController {
 
     private final FacultyRepository facultyRepository;
     private final ProgramRepository programRepository;
+    private final SubjectRepository subjectRepository;
+    private final FacultyProgramRepository facultyProgramRepository;
+    private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final PasswordEncoder passwordEncoder;
+    private static final Logger logger = LoggerFactory.getLogger(FacultyController.class);
 
     public FacultyController(FacultyRepository facultyRepository,
                            ProgramRepository programRepository,
+                           SubjectRepository subjectRepository,
+                           FacultyProgramRepository facultyProgramRepository,
+                           TeachingAssignmentRepository teachingAssignmentRepository,
                            PasswordEncoder passwordEncoder) {
         this.facultyRepository = facultyRepository;
         this.programRepository = programRepository;
+        this.subjectRepository = subjectRepository;
+        this.facultyProgramRepository = facultyProgramRepository;
+        this.teachingAssignmentRepository = teachingAssignmentRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -35,7 +47,8 @@ public class FacultyController {
                            @RequestParam String facultyId,
                            @RequestParam String email,
                            @RequestParam String password,
-                           @RequestParam Long programId,
+                           @RequestParam List<Long> programIds,
+                           @RequestParam(required = false) List<Long> subjectIds,
                            @RequestParam(required = false) String phoneNumber,
                            @RequestParam String position,
                            @RequestParam(required = false) String address,
@@ -47,10 +60,6 @@ public class FacultyController {
                 return "redirect:/admin/home";
             }
 
-            // Get the program
-            Program program = programRepository.findById(programId)
-                .orElseThrow(() -> new RuntimeException("Program not found"));
-
             // Create new faculty
             Faculty faculty = new Faculty();
             faculty.setFirstName(firstName);
@@ -58,17 +67,90 @@ public class FacultyController {
             faculty.setFacultyId(facultyId);
             faculty.setEmail(email);
             faculty.setPassword(passwordEncoder.encode(password));
-            faculty.setProgram(program);
             faculty.setPhoneNumber(phoneNumber);
             faculty.setPosition(position);
             faculty.setAddress(address);
+            faculty.setRole(Role.FACULTY);
 
+            // Save faculty first to get the ID
+            faculty = facultyRepository.save(faculty);
+
+            // Add programs
+            for (Long programId : programIds) {
+                Program program = programRepository.findById(programId)
+                    .orElseThrow(() -> new RuntimeException("Program not found: " + programId));
+                FacultyProgram facultyProgram = new FacultyProgram(faculty, program);
+                facultyProgramRepository.save(facultyProgram);
+            }
+
+            // Add subject assignments if provided
+            if (subjectIds != null && !subjectIds.isEmpty()) {
+                String currentAcademicYear = getCurrentAcademicYear();
+                Integer currentSemester = getCurrentSemester();
+
+                for (Long subjectId : subjectIds) {
+                    Subject subject = subjectRepository.findById(subjectId)
+                        .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+                    TeachingAssignment assignment = new TeachingAssignment(faculty, subject, currentAcademicYear, currentSemester);
+                    teachingAssignmentRepository.save(assignment);
+                }
+            }
+
+            // Save faculty again with all relationships
             facultyRepository.save(faculty);
             redirectAttributes.addFlashAttribute("successMessage", "Faculty member added successfully");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Error adding faculty member: " + e.getMessage());
         }
         return "redirect:/admin/home";
+    }
+
+    @GetMapping("/subjects/by-programs")
+    @ResponseBody
+    public ResponseEntity<?> getSubjectsByPrograms(@RequestParam List<Long> programIds) {
+        try {
+            logger.info("Fetching subjects for programs: {}", programIds);
+            
+            // Log the programs being queried
+            programIds.forEach(programId -> {
+                Program program = programRepository.findById(programId)
+                    .orElse(null);
+                if (program != null) {
+                    logger.info("Found program: {} (ID: {})", program.getName(), program.getId());
+                } else {
+                    logger.warn("Program not found for ID: {}", programId);
+                }
+            });
+            
+            List<Subject> subjects = subjectRepository.findByProgramIds(programIds);
+            logger.info("Found {} subjects", subjects.size());
+            
+            // Log each subject for debugging
+            subjects.forEach(subject -> {
+                logger.debug("Subject: {} - {} (Program: {})", 
+                    subject.getCode(), 
+                    subject.getName(),
+                    subject.getCourse().getProgram().getName());
+            });
+            
+            return ResponseEntity.ok(subjects);
+        } catch (Exception e) {
+            logger.error("Error fetching subjects for programs {}: {}", programIds, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Error fetching subjects: " + e.getMessage()));
+        }
+    }
+
+    private String getCurrentAcademicYear() {
+        // Implement logic to determine current academic year
+        // For example: 2023-2024
+        return "2023-2024";
+    }
+
+    private Integer getCurrentSemester() {
+        // Implement logic to determine current semester
+        // For example: 1 for first semester, 2 for second semester
+        return 1;
     }
 
     @GetMapping("/check-id/{facultyId}")
@@ -111,7 +193,7 @@ public class FacultyController {
             @RequestParam String lastName,
             @RequestParam String email,
             @RequestParam(required = false) String password,
-            @RequestParam Long programId,
+            @RequestParam List<Long> programIds,
             @RequestParam String position,
             @RequestParam(required = false) String phoneNumber,
             @RequestParam(required = false) String address,
@@ -119,14 +201,10 @@ public class FacultyController {
         try {
             Faculty faculty = facultyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Faculty not found"));
-            
-            Program program = programRepository.findById(programId)
-                .orElseThrow(() -> new RuntimeException("Program not found"));
 
             faculty.setFirstName(firstName);
             faculty.setLastName(lastName);
             faculty.setEmail(email);
-            faculty.setProgram(program);
             faculty.setPosition(position);
             faculty.setPhoneNumber(phoneNumber);
             faculty.setAddress(address);
@@ -134,6 +212,15 @@ public class FacultyController {
             // Update password only if provided
             if (password != null && !password.isEmpty()) {
                 faculty.setPassword(passwordEncoder.encode(password));
+            }
+
+            // Clear existing programs and add new ones
+            faculty.getFacultyPrograms().clear();
+            for (Long programId : programIds) {
+                Program program = programRepository.findById(programId)
+                    .orElseThrow(() -> new RuntimeException("Program not found: " + programId));
+                FacultyProgram facultyProgram = new FacultyProgram(faculty, program);
+                facultyProgramRepository.save(facultyProgram);
             }
 
             facultyRepository.save(faculty);

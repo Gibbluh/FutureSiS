@@ -2,6 +2,8 @@ package com.example.auth1.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "faculty")
@@ -29,9 +31,11 @@ public class Faculty {
     @Column(nullable = false)
     private Role role = Role.FACULTY;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "program_id", nullable = false)
-    private Program program; // Using Program as department
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FacultyProgram> facultyPrograms = new ArrayList<>();
+
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TeachingAssignment> teachingAssignments = new ArrayList<>();
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -48,6 +52,25 @@ public class Faculty {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+    }
+
+    // Helper methods for managing relationships
+    public void addProgram(Program program) {
+        FacultyProgram facultyProgram = new FacultyProgram(this, program);
+        facultyPrograms.add(facultyProgram);
+    }
+
+    public void removeProgram(Program program) {
+        facultyPrograms.removeIf(fp -> fp.getProgram().equals(program));
+    }
+
+    public void addTeachingAssignment(Subject subject, String academicYear, Integer semester) {
+        TeachingAssignment assignment = new TeachingAssignment(this, subject, academicYear, semester);
+        teachingAssignments.add(assignment);
+    }
+
+    public void removeTeachingAssignment(TeachingAssignment assignment) {
+        teachingAssignments.remove(assignment);
     }
 
     // Getters and Setters
@@ -107,12 +130,20 @@ public class Faculty {
         this.role = role;
     }
 
-    public Program getProgram() {
-        return program;
+    public List<FacultyProgram> getFacultyPrograms() {
+        return facultyPrograms;
     }
 
-    public void setProgram(Program program) {
-        this.program = program;
+    public void setFacultyPrograms(List<FacultyProgram> facultyPrograms) {
+        this.facultyPrograms = facultyPrograms;
+    }
+
+    public List<TeachingAssignment> getTeachingAssignments() {
+        return teachingAssignments;
+    }
+
+    public void setTeachingAssignments(List<TeachingAssignment> teachingAssignments) {
+        this.teachingAssignments = teachingAssignments;
     }
 
     public String getPhoneNumber() {

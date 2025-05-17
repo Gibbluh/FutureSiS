@@ -1,6 +1,7 @@
 package com.example.auth1.model;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 @Entity
@@ -16,11 +17,13 @@ public class Course {
     @Column(nullable = false)
     private int semester;
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "program_id", nullable = false)
+    @JsonIgnoreProperties({"courses"})
     private Program program;
     
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JsonIgnoreProperties({"course"})
     private List<Subject> subjects;
     
     // Constructors
