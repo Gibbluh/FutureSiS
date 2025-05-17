@@ -25,9 +25,14 @@
                         <div th:if="${message}" class="mb-4">
                             <p class="text-muted" th:text="${message}">Message</p>
                         </div>
+
+                        <div th:if="${trace}" class="mb-4">
+                            <pre class="text-start bg-light p-3" style="font-size: 12px;" th:text="${trace}">Stack Trace</pre>
+                        </div>
                         
                         <div class="mt-4">
-                            <a href="/" class="btn btn-primary">Return to Home</a>
+                            <a href="/" class="btn btn-primary me-2">Return to Home</a>
+                            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
                         </div>
                     </div>
                 </div>

@@ -61,7 +61,10 @@
             
             <div class="form-group">
                 <label for="studentNumber">Student Number:</label>
-                <input type="text" id="studentNumber" name="studentNumber" required>
+                <input type="text" id="studentNumber" name="studentNumber" required
+                       placeholder="Example: STU-2023-00001"
+                       pattern="STU-[0-9]{4}-[0-9]{5}"
+                       title="Please enter your student number (Format: STU-YYYY-NNNNN)">
             </div>
             
             <div class="form-group">

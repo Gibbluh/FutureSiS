@@ -19,6 +19,7 @@ public class DatabaseLoader implements CommandLineRunner {
     private final ProgramRepository programRepository;
     private final CourseRepository courseRepository;
     private final SubjectRepository subjectRepository;
+    private final FacultyRepository facultyRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseLoader(AdminRepository adminRepository,
@@ -26,12 +27,14 @@ public class DatabaseLoader implements CommandLineRunner {
                         ProgramRepository programRepository,
                         CourseRepository courseRepository,
                         SubjectRepository subjectRepository,
+                        FacultyRepository facultyRepository,
                         PasswordEncoder passwordEncoder) {
         this.adminRepository = adminRepository;
         this.studentRepository = studentRepository;
         this.programRepository = programRepository;
         this.courseRepository = courseRepository;
         this.subjectRepository = subjectRepository;
+        this.facultyRepository = facultyRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -45,11 +48,12 @@ public class DatabaseLoader implements CommandLineRunner {
     private boolean shouldLoadData() {
         return adminRepository.count() == 0 && 
                studentRepository.count() == 0 && 
-               programRepository.count() == 0;
+               programRepository.count() == 0 &&
+               facultyRepository.count() == 0;
     }
 
     private void loadInitialData() {
-        // 1. Create admin accounts
+        // 1. Create admin users
         List<Admin> admins = List.of(
             new Admin("admin1@school.edu", passwordEncoder.encode("Admin123!"), Role.ADMIN),
             new Admin("admin2@school.edu", passwordEncoder.encode("Admin123!"), Role.ADMIN)
@@ -66,7 +70,18 @@ public class DatabaseLoader implements CommandLineRunner {
         );
         programRepository.saveAll(programs);
 
-        // 3. Create sample students
+        // 3. Create faculty members
+        List<Faculty> faculty = List.of(
+            createFaculty("rwilson", "Robert", "Wilson", "robert.wilson@school.edu",
+                         "Associate Professor", "+1234567890", programs.get(0), "Wilson123!"),
+            createFaculty("sjohnson", "Sarah", "Johnson", "sarah.johnson@school.edu",
+                         "Assistant Professor", "+1234567891", programs.get(1), "Johnson123!"),
+            createFaculty("mbrown", "Michael", "Brown", "michael.brown@school.edu",
+                         "Professor", "+1234567892", programs.get(2), "Brown123!")
+        );
+        facultyRepository.saveAll(faculty);
+
+        // 4. Create sample students
         List<Student> students = List.of(
             createStudent("STU-2023-00001", "John", "Doe", "john.doe@school.edu", 
                          LocalDate.of(2000, 5, 15), programs.get(0), 1, 1),
@@ -80,6 +95,7 @@ public class DatabaseLoader implements CommandLineRunner {
         System.out.println("=== Sample Data Loaded ===");
         System.out.println("Admins: " + admins.size());
         System.out.println("Programs: " + programs.size());
+        System.out.println("Faculty: " + faculty.size());
         System.out.println("Courses: " + courseRepository.count());
         System.out.println("Subjects: " + subjectRepository.count());
         System.out.println("Students: " + students.size());
@@ -231,6 +247,22 @@ public class DatabaseLoader implements CommandLineRunner {
             );
             subjectRepository.save(subject);
         }
+    }
+
+    private Faculty createFaculty(String facultyId, String firstName, String lastName,
+                                String email, String position, String phoneNumber,
+                                Program program, String password) {
+        Faculty faculty = new Faculty();
+        faculty.setFacultyId(facultyId);
+        faculty.setFirstName(firstName);
+        faculty.setLastName(lastName);
+        faculty.setEmail(email);
+        faculty.setPosition(position);
+        faculty.setPhoneNumber(phoneNumber);
+        faculty.setProgram(program);
+        faculty.setPassword(passwordEncoder.encode(password));
+        faculty.setRole(Role.FACULTY);
+        return faculty;
     }
 
     private Student createStudent(String studentNumber, String firstName, String lastName, 

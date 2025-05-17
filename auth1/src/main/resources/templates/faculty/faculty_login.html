@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Login</title>
+    <title>Faculty Login</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,18 +71,16 @@
 </head>
 <body>
     <div class="login-container">
-        <h2>Admin Login</h2>
+        <h2>Faculty Login</h2>
         
         <div th:if="${param.error}" class="error-message">
-            Invalid email or password
+            Invalid faculty ID or password
         </div>
         
-        <form th:action="@{/admin/login}" method="post">
-            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-            
+        <form th:action="@{/faculty/login}" method="post">
             <div class="form-group">
-                <label for="username">Email:</label>
-                <input type="email" id="username" name="username" required>
+                <label for="username">Faculty ID:</label>
+                <input type="text" id="username" name="username" required>
             </div>
             
             <div class="form-group">
@@ -96,4 +94,4 @@
         <a href="/" class="back-link">Back to Home</a>
     </div>
 </body>
-</html>
+</html> 

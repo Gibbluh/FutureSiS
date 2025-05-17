@@ -3,7 +3,7 @@ package com.example.auth1.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "admins")
 public class Admin {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +16,8 @@ public class Admin {
     private String password;
     
     @Enumerated(EnumType.STRING)
-    private Role role;
+    @Column(nullable = false)
+    private Role role = Role.ADMIN;
 
     // Constructors
     public Admin() {
