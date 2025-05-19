@@ -2,8 +2,8 @@ package com.example.auth1.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "faculty")
@@ -32,10 +32,10 @@ public class Faculty {
     private Role role = Role.FACULTY;
 
     @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FacultyProgram> facultyPrograms = new ArrayList<>();
+    private Set<FacultyProgram> facultyPrograms = new HashSet<>();
 
     @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<TeachingAssignment> teachingAssignments = new ArrayList<>();
+    private Set<TeachingAssignment> teachingAssignments = new HashSet<>();
 
     @Column(name = "phone_number")
     private String phoneNumber;
@@ -54,25 +54,6 @@ public class Faculty {
         createdAt = LocalDateTime.now();
     }
 
-    // Helper methods for managing relationships
-    public void addProgram(Program program) {
-        FacultyProgram facultyProgram = new FacultyProgram(this, program);
-        facultyPrograms.add(facultyProgram);
-    }
-
-    public void removeProgram(Program program) {
-        facultyPrograms.removeIf(fp -> fp.getProgram().equals(program));
-    }
-
-    public void addTeachingAssignment(Subject subject, String academicYear, Integer semester) {
-        TeachingAssignment assignment = new TeachingAssignment(this, subject, academicYear, semester);
-        teachingAssignments.add(assignment);
-    }
-
-    public void removeTeachingAssignment(TeachingAssignment assignment) {
-        teachingAssignments.remove(assignment);
-    }
-
     // Getters and Setters
     public Long getId() {
         return id;
@@ -80,6 +61,14 @@ public class Faculty {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getFacultyId() {
+        return facultyId;
+    }
+
+    public void setFacultyId(String facultyId) {
+        this.facultyId = facultyId;
     }
 
     public String getFirstName() {
@@ -96,14 +85,6 @@ public class Faculty {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
-    }
-
-    public String getFacultyId() {
-        return facultyId;
-    }
-
-    public void setFacultyId(String facultyId) {
-        this.facultyId = facultyId;
     }
 
     public String getEmail() {
@@ -130,19 +111,19 @@ public class Faculty {
         this.role = role;
     }
 
-    public List<FacultyProgram> getFacultyPrograms() {
+    public Set<FacultyProgram> getFacultyPrograms() {
         return facultyPrograms;
     }
 
-    public void setFacultyPrograms(List<FacultyProgram> facultyPrograms) {
+    public void setFacultyPrograms(Set<FacultyProgram> facultyPrograms) {
         this.facultyPrograms = facultyPrograms;
     }
 
-    public List<TeachingAssignment> getTeachingAssignments() {
+    public Set<TeachingAssignment> getTeachingAssignments() {
         return teachingAssignments;
     }
 
-    public void setTeachingAssignments(List<TeachingAssignment> teachingAssignments) {
+    public void setTeachingAssignments(Set<TeachingAssignment> teachingAssignments) {
         this.teachingAssignments = teachingAssignments;
     }
 
@@ -176,5 +157,46 @@ public class Faculty {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    // Helper methods for managing relationships
+    public void addFacultyProgram(FacultyProgram facultyProgram) {
+        if (facultyProgram != null) {
+            facultyPrograms.add(facultyProgram);
+            if (facultyProgram.getFaculty() != this) {
+                facultyProgram.setFaculty(this);
+            }
+        }
+    }
+
+    public void removeFacultyProgram(FacultyProgram facultyProgram) {
+        if (facultyProgram != null) {
+            facultyPrograms.remove(facultyProgram);
+            if (facultyProgram.getFaculty() == this) {
+                facultyProgram.setFaculty(null);
+            }
+        }
+    }
+
+    public void addTeachingAssignment(TeachingAssignment assignment) {
+        teachingAssignments.add(assignment);
+        if (assignment.getFaculty() != this) {
+            assignment.setFaculty(this);
+        }
+    }
+
+    public void removeTeachingAssignment(TeachingAssignment assignment) {
+        teachingAssignments.remove(assignment);
+        if (assignment.getFaculty() == this) {
+            assignment.setFaculty(null);
+        }
+    }
+
+    public void clearFacultyPrograms() {
+        facultyPrograms.clear();
+    }
+
+    public void clearTeachingAssignments() {
+        teachingAssignments.clear();
     }
 } 

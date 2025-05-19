@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.time.LocalDate;
 
 @Controller
 @RequestMapping("/admin/faculty")
@@ -92,11 +93,11 @@ public class FacultyController {
                     Subject subject = subjectRepository.findById(subjectId)
                         .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
                     TeachingAssignment assignment = new TeachingAssignment(faculty, subject, currentAcademicYear, currentSemester);
-                    teachingAssignmentRepository.save(assignment);
+                    faculty.addTeachingAssignment(assignment);
                 }
             }
 
-            // Save faculty again with all relationships
+            // Save faculty with all relationships
             facultyRepository.save(faculty);
             redirectAttributes.addFlashAttribute("successMessage", "Faculty member added successfully");
         } catch (Exception e) {
@@ -142,9 +143,8 @@ public class FacultyController {
     }
 
     private String getCurrentAcademicYear() {
-        // Implement logic to determine current academic year
-        // For example: 2023-2024
-        return "2023-2024";
+        int year = LocalDate.now().getYear();
+        return year + "-" + (year + 1);
     }
 
     private Integer getCurrentSemester() {
@@ -176,14 +176,9 @@ public class FacultyController {
     }
 
     @GetMapping("/edit/{id}")
-    public String showEditFacultyForm(@PathVariable Long id, Model model) {
-        Faculty faculty = facultyRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Faculty not found"));
-        List<Program> programs = programRepository.findAll();
-        
-        model.addAttribute("faculty", faculty);
-        model.addAttribute("programs", programs);
-        return "admin/edit_faculty";
+    public String showEditFacultyForm(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("openEditModal", id);
+        return "redirect:/admin/home";
     }
 
     @PostMapping("/update/{id}")

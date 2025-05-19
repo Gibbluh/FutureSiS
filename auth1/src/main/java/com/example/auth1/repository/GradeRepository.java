@@ -16,10 +16,26 @@ public interface GradeRepository extends JpaRepository<Grade, Long> {
         @Param("academicYear") String academicYear, 
         @Param("semester") Integer semester);
         
-    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId AND g.subject.id = :subjectId")
+    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId AND g.subject.id = :subjectId AND g.academicYear = :academicYear AND g.semester = :semester")
     Optional<Grade> findByStudentIdAndSubjectId(
+        @Param("studentId") Long studentId, 
+        @Param("subjectId") Long subjectId,
+        @Param("academicYear") String academicYear,
+        @Param("semester") Integer semester);
+
+    @Query("SELECT g FROM Grade g WHERE g.student.id = :studentId AND g.subject.id = :subjectId")
+    Optional<Grade> findByStudentIdAndSubjectIdOnly(
         @Param("studentId") Long studentId, 
         @Param("subjectId") Long subjectId);
 
     List<Grade> findByStudentId(Long studentId);
+
+    @Query("SELECT g FROM Grade g " +
+           "WHERE g.subject.id = :subjectId " +
+           "AND g.academicYear = :academicYear " +
+           "AND g.semester = :semester")
+    List<Grade> findBySubjectIdAndAcademicYearAndSemester(
+        @Param("subjectId") Long subjectId,
+        @Param("academicYear") String academicYear,
+        @Param("semester") Integer semester);
 } 

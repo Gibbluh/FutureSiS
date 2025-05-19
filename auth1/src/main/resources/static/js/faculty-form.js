@@ -34,14 +34,15 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('Subject assignments container not found!');
     }
 
-    // Remove the inline onclick handler and add the event listener here
-    dropdownToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropdownList.classList.toggle('show');
-        dropdownToggle.classList.toggle('show');
-        console.log('Toggled dropdown:', dropdownList.classList.contains('show'));
-    });
+    // Toggle dropdown functionality
+    if (dropdownToggle) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdownList.classList.toggle('show');
+            dropdownToggle.classList.toggle('show');
+        });
+    }
 
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
@@ -90,114 +91,110 @@ document.addEventListener('DOMContentLoaded', function() {
             programSelect.querySelectorAll('input[type="checkbox"]:checked')
         ).map(checkbox => checkbox.value);
         
-        console.log('Loading subjects for programs:', selectedPrograms);
+        const yearLevel = document.getElementById('facultyYearLevel').value;
+        const semester = document.getElementById('facultySemester').value;
         
-        if (selectedPrograms.length === 0) {
-            subjectAssignments.innerHTML = '<div class="no-subjects-message">Please select departments to view available subjects</div>';
+        console.log('Loading subjects with params:', {
+            programs: selectedPrograms,
+            yearLevel,
+            semester
+        });
+        
+        if (selectedPrograms.length === 0 || !yearLevel || !semester) {
+            subjectAssignments.innerHTML = '<div class="no-subjects-message">Please select departments, year level, and semester to view available subjects</div>';
             return;
         }
 
-        // Get CSRF token
-        const token = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-        const header = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-
-        console.log('CSRF Token:', token ? 'Found' : 'Not found');
-        console.log('CSRF Header:', header ? 'Found' : 'Not found');
-
-        console.log('Making fetch request to load subjects...');
-        
         // Show loading state
         subjectAssignments.innerHTML = '<div class="loading-subjects">Loading subjects</div>';
         
-        // Use the correct URL with the full path
-        const url = `/admin/faculty/subjects/by-programs?programIds=${selectedPrograms.join(',')}`;
-        console.log('Request URL:', url);
+        // Build the URL with all parameters
+        const params = new URLSearchParams({
+            departments: selectedPrograms.join(','),
+            yearLevel: yearLevel,
+            semester: semester
+        });
         
-        fetch(url, {
-            method: 'GET',
+        fetch(`/admin/subjects/available?${params.toString()}`, {
             headers: {
                 'Accept': 'application/json',
-                [header]: token
-            },
-            credentials: 'same-origin'
+                [document.querySelector('meta[name="_csrf_header"]').content]: 
+                document.querySelector('meta[name="_csrf"]').content
+            }
         })
         .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response headers:', [...response.headers.entries()]);
             if (!response.ok) {
-                return response.text().then(text => {
-                    throw new Error(`HTTP error! status: ${response.status}, body: ${text}`);
-                });
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
             return response.json();
         })
-        .then(subjects => {
-            console.log('Received subjects:', subjects);
+        .then(data => {
+            console.log('Received data:', data);
             
-            if (!Array.isArray(subjects)) {
-                console.error('Received non-array response:', subjects);
-                throw new Error('Invalid response format');
-            }
-            
-            if (subjects.length === 0) {
-                subjectAssignments.innerHTML = '<div class="no-subjects-message">No subjects found for the selected departments</div>';
+            if (!data.subjectsByProgram || Object.keys(data.subjectsByProgram).length === 0) {
+                subjectAssignments.innerHTML = '<div class="no-subjects-message">No subjects available for the selected criteria</div>';
                 return;
             }
+
+            let html = '<div class="program-subjects-container">';
             
-            // Group subjects by program
-            const subjectsByProgram = {};
-            subjects.forEach(subject => {
-                if (subject && subject.course && subject.course.program) {
-                    const programId = subject.course.program.id.toString();
-                    if (!subjectsByProgram[programId]) {
-                        subjectsByProgram[programId] = [];
-                    }
-                    subjectsByProgram[programId].push(subject);
-                } else {
-                    console.warn('Invalid subject data:', subject);
-                }
-            });
-
-            console.log('Grouped subjects:', subjectsByProgram);
-
-            // Create HTML for each program's subjects
-            let html = '<div class="program-subjects-wrapper">';
+            // Iterate through each selected program
             selectedPrograms.forEach(programId => {
-                const programSubjects = subjectsByProgram[programId] || [];
-                console.log(`Creating HTML for program ${programId}, found ${programSubjects.length} subjects`);
+                const programSubjects = data.subjectsByProgram[programId] || [];
+                const programName = programNames[programId];
                 
                 if (programSubjects.length > 0) {
                     html += `
                         <div class="program-subjects-section">
-                            <h4>${programNames[programId]}</h4>
+                            <h4>${programName}</h4>
                             <div class="subject-grid">
                     `;
+                    
                     programSubjects.forEach(subject => {
                         html += `
                             <div class="subject-item">
                                 <label>
                                     <input type="checkbox" 
                                            name="subjectIds" 
-                                           value="${subject.id}">
+                                           value="${subject.id}"
+                                           data-program-id="${subject.programId}"
+                                           data-year-level="${yearLevel}"
+                                           data-semester="${semester}">
                                     <span>${subject.code} - ${subject.name}</span>
                                 </label>
                             </div>
                         `;
                     });
+                    
                     html += '</div></div>';
-                } else {
-                    html += `
-                        <div class="program-subjects-section">
-                            <h4>${programNames[programId]}</h4>
-                            <div class="no-subjects-message">No subjects found for this department</div>
-                        </div>
-                    `;
                 }
             });
-            html += '</div>';
             
-            console.log('Setting innerHTML for subject assignments');
+            if (html === '<div class="program-subjects-container">') {
+                html = '<div class="no-subjects-message">No subjects found for the selected criteria</div>';
+            } else {
+                html += '</div>';
+            }
+            
             subjectAssignments.innerHTML = html;
+
+            // Add change event listeners to checkboxes
+            subjectAssignments.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const subjectId = this.value;
+                    const programId = this.getAttribute('data-program-id');
+                    const yearLevel = this.getAttribute('data-year-level');
+                    const semester = this.getAttribute('data-semester');
+                    
+                    console.log('Subject selection changed:', {
+                        subjectId,
+                        programId,
+                        yearLevel,
+                        semester,
+                        checked: this.checked
+                    });
+                });
+            });
         })
         .catch(error => {
             console.error('Error loading subjects:', error);
@@ -206,6 +203,142 @@ document.addEventListener('DOMContentLoaded', function() {
                     Error loading subjects. Please try again.<br>
                     Error details: ${error.message}
                 </div>`;
+        });
+    }
+
+    // Add event listeners for year level and semester changes
+    const yearLevelSelect = document.getElementById('facultyYearLevel');
+    const semesterSelect = document.getElementById('facultySemester');
+    
+    if (yearLevelSelect) {
+        yearLevelSelect.addEventListener('change', loadSubjects);
+    }
+    
+    if (semesterSelect) {
+        semesterSelect.addEventListener('change', loadSubjects);
+    }
+
+    // Add event listeners for department selection changes
+    programSelect.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectedDepartments();
+            loadSubjects();
+        });
+    });
+
+    function updateSelectedDepartments() {
+        const selectedDepartments = Array.from(
+            programSelect.querySelectorAll('input[type="checkbox"]:checked')
+        ).map(cb => programNames[cb.value]);
+
+        if (selectedDepartments.length === 0) {
+            dropdownSpan.textContent = 'Select departments';
+            dropdownToggle.classList.add('placeholder');
+            dropdownToggle.classList.remove('has-selections');
+        } else {
+            dropdownSpan.textContent = selectedDepartments.join(', ');
+            dropdownToggle.classList.remove('placeholder');
+            dropdownToggle.classList.add('has-selections');
+        }
+    }
+
+    // Initial update of selected departments
+    updateSelectedDepartments();
+
+    // Add form submission handler
+    const editForm = document.getElementById('editFacultyForm');
+    if (editForm) {
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Submitting edit form');
+            
+            const formData = new FormData(this);
+            const facultyId = document.getElementById('editFacultyId').value;
+
+            // Get all selected subjects with their metadata
+            const selectedSubjects = [];
+            document.querySelectorAll('#editSubjectAssignments input[type="checkbox"]:checked, #subjectAssignments input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedSubjects.push({
+                    id: parseInt(checkbox.value),
+                    yearLevel: parseInt(checkbox.getAttribute('data-year-level')),
+                    semester: parseInt(checkbox.getAttribute('data-semester'))
+                });
+            });
+
+            // Add subject assignments to form data
+            formData.append('subjectAssignments', JSON.stringify(selectedSubjects));
+
+            // Get all program IDs
+            const programIds = Array.from(document.querySelectorAll('input[name="programIds"]:checked'))
+                .map(cb => cb.value);
+            
+            // Remove existing programIds from FormData and add as array
+            formData.delete('programIds');
+            programIds.forEach(id => formData.append('programIds', id));
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            formData.append('_csrf', csrfToken);
+            
+            console.log('Submitting with faculty ID:', facultyId);
+            console.log('Selected programs:', programIds);
+            console.log('Selected subjects:', selectedSubjects);
+            
+            fetch(`/admin/faculty/update-admin/${facultyId}`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    [document.querySelector('meta[name="_csrf_header"]').content]: csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        try {
+                            const jsonError = JSON.parse(text);
+                            throw new Error(jsonError.error || 'Error updating faculty member');
+                        } catch (e) {
+                            if (text.includes('500')) {
+                                throw new Error('Server error occurred while updating faculty member');
+                            } else {
+                                throw new Error('Error updating faculty member');
+                            }
+                        }
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log('Update result:', result);
+                if (result.success) {
+                    // Show success message
+                    const successMessage = document.createElement('div');
+                    successMessage.className = 'message success';
+                    successMessage.textContent = result.message || 'Faculty member updated successfully';
+                    document.querySelector('.modal-body').insertBefore(successMessage, document.querySelector('.modal-body form'));
+                    
+                    // Close modal after a short delay and refresh the page
+                    setTimeout(() => {
+                        closeEditModal();
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    throw new Error(result.message || 'Error updating faculty member');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Show error message in modal
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'message error';
+                errorMessage.textContent = error.message || 'Error updating faculty member';
+                document.querySelector('.modal-body').insertBefore(errorMessage, document.querySelector('.modal-body form'));
+                
+                // Remove error message after 5 seconds
+                setTimeout(() => {
+                    errorMessage.remove();
+                }, 5000);
+            });
         });
     }
 });

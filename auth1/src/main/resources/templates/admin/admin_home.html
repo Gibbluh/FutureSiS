@@ -235,15 +235,28 @@
             border-radius: 3px;
         }
 
-        .tab-content {
+        /* Form Tabs */
+        .form-tabs-content > .tab-content {
             display: none;
+        }
+
+        .form-tabs-content > .tab-content.active {
+            display: block;
+        }
+
+        /* Record Tabs */
+        .records-section .tab-contents > .tab-content {
+            display: none;
+        }
+
+        .records-section .tab-contents > .tab-content.active {
+            display: block;
+        }
+
+        .tab-content {
             background: white;
             border-radius: 10px;
             padding: 20px;
-        }
-
-        .tab-content.active {
-            display: block;
         }
 
         /* Card Design for Content */
@@ -271,7 +284,6 @@
         }
 
         .multiselect-dropdown-list {
-            display: none;
             position: absolute;
             left: 0;
             right: 0;
@@ -280,19 +292,60 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             margin-top: 4px;
-            max-height: 300px;
+            max-height: 200px;
             overflow-y: auto;
             z-index: 1000;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+            padding: 0;
         }
 
         .multiselect-dropdown-list.show {
             display: block;
         }
 
+        .multiselect-dropdown-toggle {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            color: #333;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .multiselect-dropdown-toggle:hover {
+            border-color: #aaa;
+        }
+
+        .multiselect-dropdown-toggle:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        .multiselect-dropdown-toggle.show:after {
+            transform: rotate(180deg);
+        }
+
+        .multiselect-dropdown-toggle:after {
+            content: '▼';
+            margin-left: 8px;
+            font-size: 12px;
+            transition: transform 0.2s;
+            color: #666;
+        }
+
         .multiselect-dropdown-option {
-            padding: 8px 12px;
+            padding: 0;
             border-bottom: 1px solid #eee;
+            cursor: pointer;
             transition: background-color 0.2s;
         }
 
@@ -307,56 +360,64 @@
         .multiselect-dropdown-option label {
             display: flex;
             align-items: center;
-            gap: 8px;
+            padding: 10px 12px;
             margin: 0;
             cursor: pointer;
             width: 100%;
             font-weight: normal;
+            transition: background-color 0.2s;
+        }
+
+        .multiselect-dropdown-option label:hover {
+            background-color: #f8f9fa;
         }
 
         .multiselect-dropdown-option input[type="checkbox"] {
             margin: 0;
-            width: auto;
-        }
-
-        .multiselect-dropdown-toggle {
-            width: 100%;
-            padding: 10px 12px;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
             cursor: pointer;
-            text-align: left;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        }
+
+        .multiselect-dropdown-option input[type="checkbox"]:checked + span {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        .multiselect-dropdown-option span {
+            font-size: 14px;
             color: #333;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .multiselect-dropdown-toggle:hover {
-            border-color: #aaa;
-        }
-
-        .multiselect-dropdown-toggle:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+            transition: color 0.2s;
         }
 
         .multiselect-dropdown-toggle.placeholder {
             color: #666;
+            font-weight: normal;
         }
 
-        .multiselect-dropdown-toggle:after {
-            content: '▼';
-            font-size: 12px;
-            margin-left: 8px;
-            transition: transform 0.2s;
+        .multiselect-dropdown-toggle.has-selections {
+            color: #333;
+            font-weight: 500;
         }
 
-        .multiselect-dropdown-toggle.show:after {
-            transform: rotate(180deg);
+        /* Custom scrollbar for the dropdown */
+        .multiselect-dropdown-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .multiselect-dropdown-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .multiselect-dropdown-list::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .multiselect-dropdown-list::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
         }
 
         /* Subject assignments styling */
@@ -470,6 +531,159 @@
             33% { content: '..'; }
             66% { content: '...'; }
         }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 20px auto;
+            padding: 0;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid #ddd;
+            text-align: right;
+            background-color: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-left: 10px;
+            transition: background-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Update tab content styles */
+        .form-tabs-content .tab-contents > .tab-content {
+            display: none;
+        }
+
+        .form-tabs-content .tab-contents > .tab-content.active {
+            display: block;
+        }
+
+        .records-section .tab-contents > .tab-content {
+            display: none;
+        }
+
+        .records-section .tab-contents > .tab-content.active {
+            display: block;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .multiselect-dropdown-list.show {
+            display: block;
+        }
+
+        .multiselect-dropdown-toggle.show:after {
+            transform: rotate(180deg);
+        }
+
+        /* Add styles for semester tabs */
+        .semester-container {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .semester-header {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-bottom: 2px solid #007bff;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .semester-content {
+            padding: 20px;
+            background: white;
+        }
+
+        .semester-section {
+            margin-bottom: 30px;
+        }
+
+        .semester-section:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -484,11 +698,13 @@
         </div>
 
         <!-- Add Forms Section -->
+        <div class="form-tabs-content">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('add-student')">Add Student</button>
-            <button class="tab" onclick="switchTab('add-faculty')">Add Faculty</button>
+                <button class="tab active" onclick="switchTab(event, 'add-student')">Add Student</button>
+                <button class="tab" onclick="switchTab(event, 'add-faculty')">Add Faculty</button>
         </div>
 
+            <div class="tab-contents">
         <!-- Add Student Form -->
         <div id="add-student" class="tab-content active">
             <div class="content-card">
@@ -632,13 +848,12 @@
                             <label for="programIds">Departments:</label>
                             <div class="multiselect-dropdown">
                                 <button type="button" class="multiselect-dropdown-toggle">
-                                    <span>None selected</span>
+                                            <span>Select Departments</span>
                                 </button>
                                 <div class="multiselect-dropdown-list">
                                     <div th:each="program : ${programs}" class="multiselect-dropdown-option">
                                         <label>
                                             <input type="checkbox" 
-                                                   th:id="${'program_' + program.id}"
                                                    name="programIds"
                                                    th:value="${program.id}">
                                             <span th:text="${program.name}"></span>
@@ -670,6 +885,28 @@
                         </div>
                     </div>
 
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="facultyYearLevel">Year Level:</label>
+                                    <select id="facultyYearLevel" name="yearLevel" required>
+                                        <option value="">-- Select Year Level --</option>
+                                        <option value="1">1st Year - Freshmen</option>
+                                        <option value="2">2nd Year - Sophomore</option>
+                                        <option value="3">3rd Year - Junior</option>
+                                        <option value="4">4th Year - Senior</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="facultySemester">Semester:</label>
+                                    <select id="facultySemester" name="semester" required>
+                                        <option value="">-- Select Semester --</option>
+                                        <option value="1">1st Semester</option>
+                                        <option value="2">2nd Semester</option>
+                                    </select>
+                        </div>
+                    </div>
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="subjectAssignments">Subject Assignments:</label>
@@ -687,16 +924,19 @@
                     <div th:if="${successMessage}" class="message success" th:text="${successMessage}"></div>
                     <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}"></div>
                 </form>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Records Section -->
         <div class="records-section">
             <div class="tabs">
-                <button class="tab active" onclick="switchRecordTab('student-records')">Student Records</button>
-                <button class="tab" onclick="switchRecordTab('faculty-records')">Faculty Records</button>
+                <button class="tab active" onclick="switchRecordTab(event, 'student-records')">Student Records</button>
+                <button class="tab" onclick="switchRecordTab(event, 'faculty-records')">Faculty Records</button>
             </div>
 
+            <div class="tab-contents">
             <!-- Student Records -->
             <div id="student-records" class="tab-content active">
                 <h2>Student List</h2>
@@ -827,9 +1067,11 @@
                                 <td th:text="${faculty.phoneNumber != null ? faculty.phoneNumber : 'N/A'}"></td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a th:href="@{'/admin/faculty/edit/' + ${faculty.id}}" 
+                                            <button type="button" 
+                                                    onclick="openEditModal(this)"
+                                                    th:data-faculty-id="${faculty.id}" 
                                            class="edit-btn" 
-                                           style="text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px;">Edit</a>
+                                                    style="text-decoration: none; color: white; padding: 8px 12px; border-radius: 4px;">Edit</button>
                                         <button type="button" 
                                                 onclick="deleteFaculty(this)"
                                                 th:data-faculty-id="${faculty.id}"
@@ -842,59 +1084,591 @@
                 </div>
                 <div th:if="${faculties == null or faculties.empty}" class="message">
                     No faculty members found.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Edit Faculty Modal -->
+    <div id="editFacultyModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Faculty Member</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="editFacultyForm">
+                    <input type="hidden" name="_csrf" th:value="${_csrf.token}"/>
+                    <input type="hidden" id="editFacultyId" name="id"/>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editFacultyIdInput">Faculty ID:</label>
+                            <input type="text" id="editFacultyIdInput" name="facultyId" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editEmail">Email:</label>
+                            <input type="email" id="editEmail" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editFirstName">First Name:</label>
+                            <input type="text" id="editFirstName" name="firstName" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editLastName">Last Name:</label>
+                            <input type="text" id="editLastName" name="lastName" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPassword">New Password (leave blank to keep current):</label>
+                            <input type="password" id="editPassword" name="password"
+                                   placeholder="Enter only if changing password">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editPosition">Position:</label>
+                            <input type="text" id="editPosition" name="position" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editPhoneNumber">Phone Number:</label>
+                            <input type="tel" id="editPhoneNumber" name="phoneNumber">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editAddress">Address:</label>
+                            <input type="text" id="editAddress" name="address">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Departments:</label>
+                            <div class="multiselect-dropdown">
+                                <button type="button" class="multiselect-dropdown-toggle">
+                                    <span>Select Departments</span>
+                                </button>
+                                <div class="multiselect-dropdown-list">
+                                    <div th:each="program : ${programs}" class="multiselect-dropdown-option">
+                                        <label>
+                                            <input type="checkbox" 
+                                                   name="programIds"
+                                                   th:value="${program.id}">
+                                            <span th:text="${program.name}"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editYearLevel">Year Level:</label>
+                            <select id="editYearLevel" name="yearLevel" required>
+                                <option value="">-- Select Year Level --</option>
+                                <option value="1">1st Year - Freshmen</option>
+                                <option value="2">2nd Year - Sophomore</option>
+                                <option value="3">3rd Year - Junior</option>
+                                <option value="4">4th Year - Senior</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Subject Assignments:</label>
+                            <div id="editSubjectAssignments" class="program-subjects-wrapper">
+                                <p style="color: #666; font-style: italic;">Please select departments and year level to view available subjects</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                        <button type="button" class="btn-secondary" onclick="closeEditModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
-        console.log('Admin home page loaded');
-        
-        // Debug function to check if elements exist
-        function checkElements() {
-            console.log('Checking elements...');
-            const programSelect = document.querySelector('.multiselect-dropdown');
-            const checkboxes = document.querySelectorAll('.multiselect-dropdown-option input[type="checkbox"]');
-            const subjectAssignments = document.getElementById('subjectAssignments');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM Content Loaded');
             
-            console.log('Program select:', programSelect);
-            console.log('Checkboxes found:', checkboxes.length);
-            console.log('Subject assignments div:', subjectAssignments);
+            // Initialize form event listeners
+            initializeFormEventListeners();
+            
+            // Initialize all multiselect dropdowns
+            document.querySelectorAll('.multiselect-dropdown').forEach(container => {
+                initializeMultiselect(container);
+            });
+
+            // Add event listeners for year level and semester changes in add faculty form
+            const yearLevelSelect = document.getElementById('facultyYearLevel');
+            const semesterSelect = document.getElementById('facultySemester');
+            const addFacultyForm = document.getElementById('facultyForm');
+
+            if (yearLevelSelect) {
+                yearLevelSelect.addEventListener('change', loadSubjects);
+            }
+            
+            if (semesterSelect) {
+                semesterSelect.addEventListener('change', loadSubjects);
+            }
+
+            // Initialize multiselect for departments in add faculty form
+            const addFacultyDepartments = addFacultyForm?.querySelector('.multiselect-dropdown');
+            if (addFacultyDepartments) {
+                const dropdownToggle = addFacultyDepartments.querySelector('.multiselect-dropdown-toggle');
+                const dropdownList = addFacultyDepartments.querySelector('.multiselect-dropdown-list');
+                const checkboxes = addFacultyDepartments.querySelectorAll('input[type="checkbox"]');
+                
+                // Add initial placeholder class
+                dropdownToggle.classList.add('placeholder');
+
+                // Toggle dropdown
+                dropdownToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropdownList.classList.toggle('show');
+                    dropdownToggle.classList.toggle('show');
+                });
+
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!addFacultyDepartments.contains(e.target)) {
+                        dropdownList.classList.remove('show');
+                        dropdownToggle.classList.remove('show');
+                    }
+                });
+
+                // Handle checkbox changes
+                checkboxes.forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        updateSelectedDepartments(addFacultyDepartments);
+                        loadSubjects();
+                    });
+
+                    // Add click handler to label to prevent dropdown from closing
+                    checkbox.closest('label').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                });
+
+                // Initial update of selected departments
+                updateSelectedDepartments(addFacultyDepartments);
+            }
+            
+            // Check if we should open the edit modal from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const editFacultyId = urlParams.get('editFaculty');
+            if (editFacultyId) {
+                openEditModal(null, editFacultyId);
+            }
+        });
+
+        function updateSelectedDepartments(container) {
+            const toggle = container.querySelector('.multiselect-dropdown-toggle');
+            const toggleSpan = toggle.querySelector('span');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+            
+            const selectedDepartments = Array.from(checkboxes).map(cb => 
+                cb.parentElement.querySelector('span').textContent
+            );
+
+            if (selectedDepartments.length === 0) {
+                toggleSpan.textContent = 'Select Departments';
+                toggle.classList.add('placeholder');
+                toggle.classList.remove('has-selections');
+            } else {
+                toggleSpan.textContent = selectedDepartments.join(', ');
+                toggle.classList.remove('placeholder');
+                toggle.classList.add('has-selections');
+            }
         }
 
-        // Call check after a short delay to ensure DOM is loaded
-        setTimeout(checkElements, 1000);
+        function loadSubjects() {
+            const form = document.getElementById('facultyForm');
+            const subjectAssignments = document.getElementById('subjectAssignments');
+            const yearLevel = document.getElementById('facultyYearLevel').value;
+            const semester = document.getElementById('facultySemester').value;
+            const selectedDepartments = Array.from(
+                form.querySelectorAll('.multiselect-dropdown input[type="checkbox"]:checked')
+            ).map(cb => cb.value);
 
-        function switchTab(tabId) {
+            if (!yearLevel || !semester || selectedDepartments.length === 0) {
+                subjectAssignments.innerHTML = 
+                    '<p style="color: #666; font-style: italic;">Please select departments, year level, and semester to view available subjects</p>';
+                return;
+            }
+
+            // Show loading state
+            subjectAssignments.innerHTML = '<div class="loading-subjects">Loading subjects</div>';
+
+            // Build the URL with all parameters
+            const params = new URLSearchParams({
+                yearLevel: yearLevel,
+                semester: semester,
+                departments: selectedDepartments.join(',')
+            });
+
+            fetch(`/admin/subjects/available?${params.toString()}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.subjects || data.subjects.length === 0) {
+                    subjectAssignments.innerHTML = 
+                        '<div class="no-subjects-message">No subjects available for the selected criteria</div>';
+                    return;
+                }
+
+                // Group subjects by department
+                const subjectsByDepartment = {};
+                data.subjects.forEach(subject => {
+                    if (!subjectsByDepartment[subject.programName]) {
+                        subjectsByDepartment[subject.programName] = [];
+                    }
+                    subjectsByDepartment[subject.programName].push(subject);
+                });
+
+                // Generate HTML for subjects
+                let html = '';
+                Object.entries(subjectsByDepartment).forEach(([department, subjects]) => {
+                    html += `
+                        <div class="program-subjects-section">
+                            <h4>${department}</h4>
+                            <div class="subject-grid">
+                                ${subjects.map(subject => `
+                                    <div class="subject-item">
+                                        <label>
+                                            <input type="checkbox" 
+                                                   name="subjectIds" 
+                                                   value="${subject.id}">
+                                            <span>${subject.code} - ${subject.name}</span>
+                                        </label>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                subjectAssignments.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error loading subjects:', error);
+                subjectAssignments.innerHTML = 
+                    '<div class="error-message">Error loading subjects. Please try again.</div>';
+            });
+        }
+
+        function initializeFormEventListeners() {
+            // Add event listeners for year level and semester changes in edit form
+            const editYearLevel = document.getElementById('editYearLevel');
+            if (editYearLevel) {
+                editYearLevel.addEventListener('change', () => loadEditSubjects());
+            }
+            
+            // Add event listeners for department changes in edit form
+            const programCheckboxes = document.querySelectorAll('#editFacultyForm input[name="programIds"]');
+            programCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', () => loadEditSubjects());
+            });
+
+            // Initialize edit form submission handler
+            const editForm = document.getElementById('editFacultyForm');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Submitting edit form');
+                    
+                    const formData = new FormData(this);
+                    const facultyId = document.getElementById('editFacultyId').value;
+                    
+                    // Add all selected subjects to the form data
+                    const allSubjects = Array.from(window.selectedSubjects.values());
+                    if (allSubjects.length > 0) {
+                        formData.append('subjectAssignments', JSON.stringify(allSubjects));
+                    }
+                    
+                    // Get all program IDs
+                    const programIds = Array.from(document.querySelectorAll('#editFacultyForm input[name="programIds"]:checked'))
+                        .map(cb => cb.value);
+                    
+                    // Remove existing programIds from FormData and add as array
+                    formData.delete('programIds');
+                    programIds.forEach(id => formData.append('programIds', id));
+                    
+                    // Add CSRF token
+                    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+                    formData.append('_csrf', csrfToken);
+                    
+                    console.log('Submitting with faculty ID:', facultyId);
+                    console.log('Selected programs:', programIds);
+                    console.log('All selected subjects:', allSubjects);
+                    
+                    fetch(`/admin/faculty/update-admin/${facultyId}`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            [document.querySelector('meta[name="_csrf_header"]').content]: csrfToken
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.text().then(text => {
+                                try {
+                                    // Try to parse as JSON first
+                                    const jsonError = JSON.parse(text);
+                                    throw new Error(jsonError.error || 'Error updating faculty member');
+                                } catch (e) {
+                                    // If not JSON, it might be HTML error page
+                                    if (text.includes('500')) {
+                                        throw new Error('Server error occurred while updating faculty member');
+                                    } else {
+                                        throw new Error('Error updating faculty member');
+                                    }
+                                }
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        console.log('Update result:', result);
+                        if (result.success) {
+                            // Show success message
+                            const successMessage = document.createElement('div');
+                            successMessage.className = 'message success';
+                            successMessage.textContent = result.message || 'Faculty member updated successfully';
+                            document.querySelector('.modal-body').insertBefore(successMessage, document.querySelector('.modal-body form'));
+                            
+                            // Close modal after a short delay
+                            setTimeout(() => {
+                                closeEditModal();
+                                // Refresh the page to show updated data
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            throw new Error(result.message || 'Error updating faculty member');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        // Show error message in modal
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'message error';
+                        errorMessage.textContent = error.message || 'Error updating faculty member';
+                        document.querySelector('.modal-body').insertBefore(errorMessage, document.querySelector('.modal-body form'));
+                        
+                        // Remove error message after 5 seconds
+                        setTimeout(() => {
+                            errorMessage.remove();
+                        }, 5000);
+                    });
+                });
+            }
+        }
+
+        function openEditModal(button, facultyId = null) {
+            // Get faculty ID either from button or parameter
+            const id = facultyId || button.getAttribute('data-faculty-id');
+            console.log('Opening edit modal for faculty ID:', id);
+            
+            const modal = document.getElementById('editFacultyModal');
+            if (!modal) {
+                console.error('Modal element not found');
+                return;
+            }
+            
+            // Show modal first to ensure form is in the DOM
+            modal.style.display = 'block';
+            
+            // Initialize selectedSubjects map if it doesn't exist
+            if (!window.selectedSubjects) {
+                window.selectedSubjects = new Map();
+            } else {
+                // Clear previous selections
+                window.selectedSubjects.clear();
+            }
+            
+            // Fetch faculty data
+            fetch(`/admin/faculty/${id}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(faculty => {
+                console.log('Loaded faculty data:', faculty);
+                
+                // Reset the form
+                document.getElementById('editFacultyForm').reset();
+                
+                // Populate form fields
+                document.getElementById('editFacultyId').value = faculty.id;
+                document.getElementById('editFacultyIdInput').value = faculty.facultyId;
+                document.getElementById('editEmail').value = faculty.email;
+                document.getElementById('editFirstName').value = faculty.firstName;
+                document.getElementById('editLastName').value = faculty.lastName;
+                document.getElementById('editPosition').value = faculty.position;
+                document.getElementById('editPhoneNumber').value = faculty.phoneNumber || '';
+                document.getElementById('editAddress').value = faculty.address || '';
+                document.getElementById('editYearLevel').value = faculty.yearLevel || '';
+                
+                // Set departments
+                const departmentCheckboxes = document.querySelectorAll('#editFacultyForm input[name="programIds"]');
+                departmentCheckboxes.forEach(checkbox => {
+                    checkbox.checked = faculty.programIds.includes(parseInt(checkbox.value));
+                });
+                
+                // Store all subject assignments in the window.selectedSubjects map
+                if (faculty.subjects && Array.isArray(faculty.subjects)) {
+                    faculty.subjects.forEach(subject => {
+                        const key = `${subject.yearLevel}-${subject.semester}-${subject.id}`;
+                        window.selectedSubjects.set(key, {
+                            id: subject.id,
+                            yearLevel: subject.yearLevel,
+                            semester: subject.semester
+                        });
+                    });
+                }
+                
+                // Update the departments dropdown display
+                const dropdownContainer = document.querySelector('#editFacultyForm .multiselect-dropdown');
+                updateSelectedDepartments(dropdownContainer);
+                
+                // Load subjects for the current year level
+                if (faculty.yearLevel) {
+                    loadEditSubjects();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading faculty data:', error);
+                modal.querySelector('.modal-body').innerHTML = `
+                    <div class="error-message">
+                        Error loading faculty data: ${error.message}<br>
+                        Please try again or contact support if the problem persists.
+                    </div>`;
+            });
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('editFacultyModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editFacultyModal');
+            if (event.target == modal) {
+                closeEditModal();
+            }
+        }
+
+        function switchTab(event, tabId) {
+            console.log('switchTab called with:', { event, tabId });
+            
+            // Get the container for form tabs
+            const container = document.querySelector('.form-tabs-content');
+            console.log('Form tabs container:', container);
+            
             // Hide all form tab contents
-            document.querySelectorAll('.container > .tab-content').forEach(content => {
+            const tabContents = container.querySelectorAll('.tab-contents > .tab-content');
+            console.log('Found tab contents:', tabContents.length);
+            tabContents.forEach(content => {
                 content.classList.remove('active');
+                console.log('Removed active from:', content.id);
             });
             
             // Deactivate all form tabs
-            document.querySelectorAll('.container > .tabs .tab').forEach(tab => {
+            const tabs = container.querySelectorAll('.tabs > .tab');
+            console.log('Found tabs:', tabs.length);
+            tabs.forEach(tab => {
                 tab.classList.remove('active');
+                console.log('Removed active from tab:', tab.textContent);
             });
             
             // Activate selected tab and content
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            const selectedContent = document.getElementById(tabId);
+            const selectedTab = event.target;
+            console.log('Activating:', { content: selectedContent, tab: selectedTab });
+            
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            } else {
+                console.error('Could not find tab content:', tabId);
+            }
+            
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            } else {
+                console.error('Could not find tab element');
+            }
         }
 
-        function switchRecordTab(tabId) {
+        function switchRecordTab(event, tabId) {
+            console.log('switchRecordTab called with:', { event, tabId });
+            
+            // Get the container for record tabs
+            const container = document.querySelector('.records-section');
+            console.log('Records container:', container);
+            
             // Hide all record tab contents
-            document.querySelectorAll('.records-section .tab-content').forEach(content => {
+            const tabContents = container.querySelectorAll('.tab-contents > .tab-content');
+            console.log('Found record tab contents:', tabContents.length);
+            tabContents.forEach(content => {
                 content.classList.remove('active');
+                console.log('Removed active from:', content.id);
             });
             
             // Deactivate all record tabs
-            document.querySelectorAll('.records-section .tabs .tab').forEach(tab => {
+            const tabs = container.querySelectorAll('.tabs > .tab');
+            console.log('Found record tabs:', tabs.length);
+            tabs.forEach(tab => {
                 tab.classList.remove('active');
+                console.log('Removed active from tab:', tab.textContent);
             });
             
             // Activate selected tab and content
-            document.getElementById(tabId).classList.add('active');
-            event.target.classList.add('active');
+            const selectedContent = document.getElementById(tabId);
+            const selectedTab = event.target;
+            console.log('Activating:', { content: selectedContent, tab: selectedTab });
+            
+            if (selectedContent) {
+                selectedContent.classList.add('active');
+            } else {
+                console.error('Could not find tab content:', tabId);
+            }
+            
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            } else {
+                console.error('Could not find tab element');
+            }
         }
 
         function resetForm(form) {
@@ -1095,31 +1869,206 @@
                 });
         }
 
-        function toggleDropdown(button) {
-            const dropdown = button.nextElementSibling;
-            dropdown.classList.toggle('show');
+        function initializeMultiselect(container) {
+            const dropdownToggle = container.querySelector('.multiselect-dropdown-toggle');
+            const dropdownList = container.querySelector('.multiselect-dropdown-list');
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            
+            // Add initial placeholder class
+            dropdownToggle.classList.add('placeholder');
+
+            // Toggle dropdown
+            dropdownToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropdownList.classList.toggle('show');
+                dropdownToggle.classList.toggle('show');
+                
+                if (dropdownList.classList.contains('show')) {
+                    // Ensure the dropdown is visible within the viewport
+                    const rect = dropdownList.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight;
+                    
+                    if (rect.bottom > viewportHeight) {
+                        dropdownList.style.maxHeight = `${viewportHeight - rect.top - 20}px`;
+                    }
+                }
+            });
             
             // Close dropdown when clicking outside
-            document.addEventListener('click', function closeDropdown(e) {
-                if (!button.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.classList.remove('show');
-                    document.removeEventListener('click', closeDropdown);
+            document.addEventListener('click', function(e) {
+                if (!container.contains(e.target)) {
+                    dropdownList.classList.remove('show');
+                    dropdownToggle.classList.remove('show');
                 }
+            });
+
+            // Handle checkbox changes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectedDepartments(container);
+                    if (container.closest('#editFacultyForm')) {
+                        loadEditSubjects();
+                    } else {
+                        loadSubjects();
+                    }
+                });
+
+                // Add click handler to label to prevent dropdown from closing
+                checkbox.closest('label').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+            });
+
+            // Initial update of selected departments
+            updateSelectedDepartments(container);
+        }
+
+        function loadEditSubjects() {
+            const yearLevel = document.getElementById('editYearLevel').value;
+            const selectedDepartments = Array.from(
+                document.querySelectorAll('#editFacultyForm input[name="programIds"]:checked')
+            ).map(cb => cb.value);
+            
+            if (!yearLevel || selectedDepartments.length === 0) {
+                document.getElementById('editSubjectAssignments').innerHTML = 
+                    '<p style="color: #666; font-style: italic;">Please select departments and year level to view available subjects</p>';
+                return;
+            }
+            
+            // Store current selections before loading new subjects
+            const currentSelections = new Map();
+            document.querySelectorAll('#editSubjectAssignments input[type="checkbox"]:checked').forEach(checkbox => {
+                const key = `${checkbox.getAttribute('data-year')}-${checkbox.getAttribute('data-semester')}-${checkbox.value}`;
+                currentSelections.set(key, {
+                    id: parseInt(checkbox.value),
+                    yearLevel: parseInt(checkbox.getAttribute('data-year')),
+                    semester: parseInt(checkbox.getAttribute('data-semester'))
+                });
+            });
+            
+            // Show loading state
+            document.getElementById('editSubjectAssignments').innerHTML = 
+                '<div class="loading-subjects">Loading available subjects</div>';
+            
+            // We'll fetch subjects for both semesters
+            Promise.all([1, 2].map(semester => {
+                const params = new URLSearchParams({
+                    yearLevel: yearLevel,
+                    semester: semester,
+                    departments: selectedDepartments.join(',')
+                });
+                
+                return fetch(`/admin/subjects/available?${params.toString()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        [document.querySelector('meta[name="_csrf_header"]').content]: document.querySelector('meta[name="_csrf"]').content
+                    }
+                }).then(response => response.json());
+            }))
+            .then(([firstSemesterData, secondSemesterData]) => {
+                let html = '';
+                
+                // Process both semesters
+                [
+                    { data: firstSemesterData, title: '1st Semester', semesterNum: 1 },
+                    { data: secondSemesterData, title: '2nd Semester', semesterNum: 2 }
+                ].forEach(({ data, title, semesterNum }) => {
+                    if (!data.subjects || data.subjects.length === 0) {
+                        return;
+                    }
+                    
+                    html += `
+                        <div class="semester-container">
+                            <div class="semester-header">${title}</div>
+                            <div class="semester-content">
+                    `;
+                    
+                    // Group subjects by department for this semester
+                    const subjectsByDepartment = {};
+                    data.subjects.forEach(subject => {
+                        if (!subjectsByDepartment[subject.programName]) {
+                            subjectsByDepartment[subject.programName] = [];
+                        }
+                        subjectsByDepartment[subject.programName].push(subject);
+                    });
+                    
+                    Object.entries(subjectsByDepartment).forEach(([department, subjects]) => {
+                        html += `
+                            <div class="program-subjects-section">
+                                <h4>${department}</h4>
+                                <div class="subject-grid">
+                                    ${subjects.map(subject => {
+                                        const key = `${yearLevel}-${semesterNum}-${subject.id}`;
+                                        // Check both current selections and window.selectedSubjects
+                                        const isAssigned = currentSelections.has(key) || window.selectedSubjects.has(key);
+                                        return `
+                                            <div class="subject-item">
+                                                <label>
+                                                    <input type="checkbox" 
+                                                           name="subjectIds" 
+                                                           value="${subject.id}"
+                                                           data-year="${yearLevel}"
+                                                           data-semester="${semesterNum}"
+                                                           onchange="handleSubjectSelection(this)"
+                                                           ${isAssigned ? 'checked' : ''}>
+                                                    <span>${subject.code} - ${subject.name}</span>
+                                                </label>
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                if (!html) {
+                    html = '<div class="no-subjects-message">No subjects available for the selected criteria</div>';
+                }
+                
+                document.getElementById('editSubjectAssignments').innerHTML = html;
+
+                // Restore all previous selections that weren't in the current view
+                currentSelections.forEach((subject, key) => {
+                    if (!document.querySelector(`input[type="checkbox"][data-year="${subject.yearLevel}"][data-semester="${subject.semester}"][value="${subject.id}"]`)) {
+                        window.selectedSubjects.set(key, subject);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error loading subjects:', error);
+                document.getElementById('editSubjectAssignments').innerHTML = 
+                    '<div class="error-message">Error loading subjects. Please try again.</div>';
             });
         }
 
-        function updateSelectedOptions(checkbox) {
-            const dropdownToggle = checkbox.closest('.multiselect-dropdown').querySelector('.multiselect-dropdown-toggle span');
-            const selectedOptions = checkbox.closest('.multiselect-dropdown-list').querySelectorAll('input[type="checkbox"]:checked');
+        function handleSubjectSelection(checkbox) {
+            const yearLevel = parseInt(checkbox.getAttribute('data-year'));
+            const semester = parseInt(checkbox.getAttribute('data-semester'));
+            const subjectId = parseInt(checkbox.value);
+            const key = `${yearLevel}-${semester}-${subjectId}`;
             
-            if (selectedOptions.length === 0) {
-                dropdownToggle.textContent = 'None selected';
+            if (checkbox.checked) {
+                window.selectedSubjects.set(key, {
+                    id: subjectId,
+                    yearLevel: yearLevel,
+                    semester: semester
+                });
             } else {
-                const selectedNames = Array.from(selectedOptions).map(option => 
-                    option.nextElementSibling.textContent
-                );
-                dropdownToggle.textContent = selectedNames.join(', ');
+                window.selectedSubjects.delete(key);
             }
+
+            // Log current selections for debugging
+            console.log('Current selections:', {
+                totalSelected: window.selectedSubjects.size,
+                selections: Array.from(window.selectedSubjects.entries())
+            });
         }
     </script>
     

@@ -77,7 +77,7 @@ public class Grade {
     public void setRawGrade(Double rawGrade) {
         this.rawGrade = rawGrade;
         if (rawGrade != null) {
-            this.gwa = convertToGWA(rawGrade);
+            this.gwa = calculateGWA(rawGrade);
         }
     }
 
@@ -85,14 +85,8 @@ public class Grade {
         return gwa;
     }
 
-    // For backward compatibility
-    public Double getGrade() {
-        return rawGrade;
-    }
-
-    // For backward compatibility
-    public void setGrade(Double grade) {
-        setRawGrade(grade);
+    public void setGwa(Double gwa) {
+        this.gwa = gwa;
     }
 
     public String getAcademicYear() {
@@ -111,27 +105,46 @@ public class Grade {
         this.semester = semester;
     }
 
-    private Double convertToGWA(Double percentageGrade) {
-        if (percentageGrade == null) return null;
-        if (percentageGrade >= 95) return 1.0;
-        if (percentageGrade >= 92) return 1.25;
-        if (percentageGrade >= 89) return 1.5;
-        if (percentageGrade >= 86) return 1.75;
-        if (percentageGrade >= 83) return 2.0;
-        if (percentageGrade >= 80) return 2.25;
-        if (percentageGrade >= 77) return 2.5;
-        if (percentageGrade >= 75) return 2.75;
-        if (percentageGrade >= 72) return 3.0;
+    // Grade calculation methods
+    private Double calculateGWA(Double rawGrade) {
+        if (rawGrade == null) return null;
+        
+        // Philippine Grading Scale:
+        // 1.0 = 97-100% (Excellent)
+        // 1.25 = 94-96%
+        // 1.5 = 91-93%
+        // 1.75 = 88-90%
+        // 2.0 = 85-87%
+        // 2.25 = 82-84%
+        // 2.5 = 79-81%
+        // 2.75 = 76-78%
+        // 3.0 = 75%
+        // 5.0 = Below 75 (Failed)
+        
+        if (rawGrade >= 97) return 1.0;
+        if (rawGrade >= 94) return 1.25;
+        if (rawGrade >= 91) return 1.5;
+        if (rawGrade >= 88) return 1.75;
+        if (rawGrade >= 85) return 2.0;
+        if (rawGrade >= 82) return 2.25;
+        if (rawGrade >= 79) return 2.5;
+        if (rawGrade >= 76) return 2.75;
+        if (rawGrade >= 75) return 3.0;
         return 5.0;
     }
 
     public String getLetterGrade() {
-        if (gwa == null) return "N/A";
-        if (gwa == 1.0) return "A";
-        if (gwa <= 1.5) return "A-";
-        if (gwa <= 2.0) return "B";
-        if (gwa <= 2.5) return "B-";
-        if (gwa <= 3.0) return "C";
+        if (rawGrade == null) return "N/A";
+        
+        if (rawGrade >= 97) return "A+";
+        if (rawGrade >= 94) return "A";
+        if (rawGrade >= 91) return "A-";
+        if (rawGrade >= 88) return "B+";
+        if (rawGrade >= 85) return "B";
+        if (rawGrade >= 82) return "B-";
+        if (rawGrade >= 79) return "C+";
+        if (rawGrade >= 76) return "C";
+        if (rawGrade >= 75) return "C-";
         return "F";
     }
 

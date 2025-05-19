@@ -20,15 +20,21 @@ public class GradeController {
     private final SubjectRepository subjectRepository;
     private final GradeRepository gradeRepository;
     private final CourseRepository courseRepository;
+    private final TeachingAssignmentRepository teachingAssignmentRepository;
+    private final FacultyRepository facultyRepository;
 
     public GradeController(StudentRepository studentRepository,
                           SubjectRepository subjectRepository,
                           GradeRepository gradeRepository,
-                          CourseRepository courseRepository) {
+                          CourseRepository courseRepository,
+                          TeachingAssignmentRepository teachingAssignmentRepository,
+                          FacultyRepository facultyRepository) {
         this.studentRepository = studentRepository;
         this.subjectRepository = subjectRepository;
         this.gradeRepository = gradeRepository;
         this.courseRepository = courseRepository;
+        this.teachingAssignmentRepository = teachingAssignmentRepository;
+        this.facultyRepository = facultyRepository;
     }
 
     @GetMapping("/students/{studentId}/grades")
@@ -95,12 +101,17 @@ public class GradeController {
                     studentId, currentAcademicYear, currentSemester);
             logger.info("Found {} existing grades", existingGrades.size());
 
+            // Get all faculty members with their programs
+            List<Faculty> faculties = facultyRepository.findAllWithPrograms();
+            logger.info("Found {} faculty members", faculties.size());
+
             // Add all necessary attributes to the model
             model.addAttribute("student", student);
             model.addAttribute("subjects", availableSubjects);
             model.addAttribute("grades", existingGrades);
             model.addAttribute("academicYear", currentAcademicYear);
             model.addAttribute("semester", currentSemester);
+            model.addAttribute("faculties", faculties);
 
             logger.info("Successfully prepared grade view model");
             return "admin/student_grades";
@@ -125,10 +136,11 @@ public class GradeController {
                              @RequestParam(required = false) Double grade,
                              @RequestParam String academicYear,
                              @RequestParam Integer semester,
+                             @RequestParam(required = false) String facultyId,
                              Model model,
                              RedirectAttributes redirectAttributes) {
-        logger.debug("Received grade update request - Parameters: studentId={}, subjectId={}, grade={}, year={}, semester={}", 
-            studentId, subjectId, grade, academicYear, semester);
+        logger.debug("Received grade update request - Parameters: studentId={}, subjectId={}, grade={}, year={}, semester={}, facultyId={}", 
+            studentId, subjectId, grade, academicYear, semester, facultyId);
             
         try {
             // Validate input parameters
@@ -163,10 +175,44 @@ public class GradeController {
                     .orElseThrow(() -> new RuntimeException("Subject not found with ID: " + subjectId));
             logger.debug("Found subject: {} - {} (ID: {})", subject.getCode(), subject.getName(), subject.getId());
 
+            // Find or create teaching assignment if faculty is specified
+            if (facultyId != null && !facultyId.trim().isEmpty()) {
+                Faculty faculty = facultyRepository.findByFacultyId(facultyId)
+                    .orElseThrow(() -> new RuntimeException("Faculty not found with ID: " + facultyId));
+                
+                // Load faculty with teaching assignments to ensure we have the full collection
+                faculty = facultyRepository.findByFacultyIdWithTeachingAssignments(facultyId)
+                    .orElseThrow(() -> new RuntimeException("Faculty not found with ID: " + facultyId));
+                
+                // Check if teaching assignment already exists
+                boolean hasAssignment = faculty.getTeachingAssignments().stream()
+                    .anyMatch(ta -> ta.getSubject().getId().equals(subjectId) &&
+                                  ta.getAcademicYear().equals(academicYear) &&
+                                  ta.getSemester().equals(semester));
+                
+                if (!hasAssignment) {
+                    TeachingAssignment teachingAssignment = new TeachingAssignment();
+                    teachingAssignment.setFaculty(faculty);
+                    teachingAssignment.setSubject(subject);
+                    teachingAssignment.setAcademicYear(academicYear);
+                    teachingAssignment.setSemester(semester);
+                    
+                    // Add to both sides of the relationship
+                    faculty.addTeachingAssignment(teachingAssignment);
+                    
+                    // Save both the teaching assignment and faculty
+                    teachingAssignmentRepository.save(teachingAssignment);
+                    facultyRepository.save(faculty);
+                    
+                    logger.info("Created new teaching assignment for faculty {} and subject {}", 
+                        faculty.getFacultyId(), subject.getCode());
+                }
+            }
+
             // Find existing grade or create new one
             Grade gradeEntity;
             try {
-                gradeEntity = gradeRepository.findByStudentIdAndSubjectId(studentId, subjectId)
+                gradeEntity = gradeRepository.findByStudentIdAndSubjectId(studentId, subjectId, academicYear, semester)
                         .orElse(new Grade(student, subject, null, academicYear, semester));
                 logger.debug("Found existing grade: {}", gradeEntity != null ? gradeEntity.getId() : "new grade");
             } catch (Exception e) {
@@ -174,7 +220,7 @@ public class GradeController {
                 throw new RuntimeException("Error accessing grade data: " + e.getMessage());
             }
 
-            // Update grade - this will automatically calculate GWA
+            // Update grade
             try {
                 if (gradeEntity != null) {
                     gradeEntity.setRawGrade(grade);
@@ -309,12 +355,7 @@ public class GradeController {
     }
 
     private String getCurrentAcademicYear() {
-        LocalDate now = LocalDate.now();
-        int year = now.getYear();
-        // If we're in the latter half of the year, academic year is year-year+1
-        if (now.getMonthValue() > 6) {
-            return year + "-" + (year + 1);
-        }
-        return (year - 1) + "-" + year;
+        int year = LocalDate.now().getYear();
+        return year + "-" + (year + 1);
     }
 } 
