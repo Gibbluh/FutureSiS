@@ -206,11 +206,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Faculty Dashboard</h1>
-            <form th:action="@{/faculty/logout}" method="post" style="margin: 0;">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button type="submit" class="logout-btn">Logout</button>
-            </form>
+            <div>
+                <div class="welcome-text">Welcome, Faculty!</div>
+                <div class="faculty-id">Faculty ID: <span th:text="${#authentication.name}"></span></div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <form th:action="@{/faculty/logout}" method="post" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
         </div>
 
         <!-- Error Messages -->
@@ -259,11 +263,9 @@
                             <label for="academicYearFilter" class="form-label">Filter by Academic Year:</label>
                             <select id="academicYearFilter" class="form-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                 <option value="all">All Academic Years</option>
-                                <option th:each="assignment : ${faculty.teachingAssignments}" 
-                                        th:value="${assignment.academicYear}"
-                                        th:text="${assignment.academicYear}"
-                                        th:data-year="${assignment.academicYear}">
-                                </option>
+                                <th:block th:with="uniqueYears=${faculty.teachingAssignments.![academicYear]?.stream()?.distinct()?.toList()}">
+                                    <option th:each="year : ${uniqueYears}" th:value="${year}" th:text="${year}"></option>
+                                </th:block>
                             </select>
                         </div>
                     </div>
@@ -292,7 +294,15 @@
                                     
                                     <!-- Show semester content if there are assignments -->
                                     <div th:if="${!#lists.isEmpty(semesterAssignments)}">
-                                        <h3 th:text="'Year ' + ${year}" class="year-header"></h3>
+                                        <h3 class="year-header">
+                                            <span th:switch="${year}">
+                                                <span th:case="1">1st Year</span>
+                                                <span th:case="2">2nd Year</span>
+                                                <span th:case="3">3rd Year</span>
+                                                <span th:case="4">4th Year</span>
+                                                <span th:case="*">Year [[${year}]]</span>
+                                            </span>
+                                        </h3>
                                         <h4 th:text="'Semester ' + ${semester}" class="semester-header"></h4>
                                         
                                         <div class="subject-list">

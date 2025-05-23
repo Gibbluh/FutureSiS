@@ -2,34 +2,107 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Student Login</title>
+    <title>User Login</title>
+    <style>
+        body {
+            background: #f7f7f7;
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .login-container {
+            max-width: 450px;
+            margin: 60px auto;
+            padding: 32px 32px 24px 32px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        }
+        h2 {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 28px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 500;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="date"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px 12px;
+            box-sizing: border-box;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: #f9f9f9;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        input[type="password"]:focus {
+            border: 1.5px solid #1976d2;
+            outline: none;
+            background: #fff;
+        }
+        button {
+            background-color: #1976d2;
+            color: #fff;
+            padding: 12px 0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #1565c0;
+        }
+        .error-message {
+            color: #d32f2f;
+            background: #fff0f0;
+            border: 1px solid #ffcdd2;
+            border-radius: 4px;
+            margin-bottom: 18px;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 1rem;
+        }
+    </style>
 </head>
 <body>
-    <div style="max-width: 400px; margin: 0 auto; margin-top: 50px;">
-        <h2 style="text-align: center;">Student Login</h2>
-        
-        <div th:if="${param.error}" style="color: red; text-align: center;">
-            Invalid student number, birth date, or password
+    <div class="login-container">
+        <h2>User Login</h2>
+        <div th:if="${param.error}" class="error-message">
+            Invalid user number, birth date, or password
         </div>
-        
-        <form th:action="@{/student/login}" method="post">
-            <div style="margin-bottom: 15px;">
-                <label>Student Number:</label>
-                <input type="text" name="username" required style="width: 100%; padding: 8px;">
+        <form th:action="@{/user/login}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="form-group">
+                <label for="username">User Number:</label>
+                <input type="text" id="username" name="username" required placeholder="Enter your user number">
             </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>Birth Date:</label>
-                <input type="date" name="birthDate" required style="width: 100%; padding: 8px;">
+            <div class="form-group">
+                <label for="birthDate">Birth Date:</label>
+                <input type="date" id="birthDate" name="birthDate" required>
             </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>Password:</label>
-                <input type="password" name="password" required style="width: 100%; padding: 8px;">
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
             </div>
-            
-            <div style="text-align: center;">
-                <button type="submit" style="padding: 8px 20px;">Login</button>
+            <div class="form-group">
+                <button type="submit">Login</button>
             </div>
         </form>
     </div>

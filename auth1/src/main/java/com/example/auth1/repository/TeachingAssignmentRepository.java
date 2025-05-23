@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -20,4 +21,10 @@ public interface TeachingAssignmentRepository extends JpaRepository<TeachingAssi
     @Modifying
     @Transactional
     void deleteByFaculty(Faculty faculty);
+
+    @Query("SELECT ta FROM TeachingAssignment ta " +
+           "JOIN FETCH ta.faculty f " +
+           "JOIN FETCH ta.subject s " +
+           "WHERE s.name LIKE %:subjectName%")
+    List<TeachingAssignment> findBySubjectName(@Param("subjectName") String subjectName);
 } 

@@ -104,26 +104,5 @@
 
         <a th:href="@{/admin/home}" class="back-link">Back to Admin Home</a>
     </div>
-
-    <h2>Manage Programs</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Program Name</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="program : ${programs}">
-                <td th:text="${program.id}"></td>
-                <td th:text="${program.name}"></td>
-                <td>
-                    <button class="btn btn-danger" th:onclick="'/admin/programs/delete/' + ${program.id}">Delete</button>
-                    <button class="btn btn-primary" th:onclick="'/admin/programs/edit/' + ${program.id}">Edit</button>
-                </td>
-            </tr>
-        </tbody>
-    </table>
 </body>
 </html>

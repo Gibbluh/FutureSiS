@@ -33,7 +33,9 @@ public class AcademicController {
     @GetMapping("/programs")
     @Transactional(readOnly = true)
     public String managePrograms(Model model) {
-        model.addAttribute("programs", programRepository.findAll());
+        List<Program> programs = programRepository.findAll();
+        programs.sort(Comparator.comparing(Program::getId));
+        model.addAttribute("programs", programs);
         return "admin/manage_programs";
     }
 

@@ -34,17 +34,4 @@ public class MainController {
     public String studentLogin() {
         return "student/student_login";
     }
-
-    @GetMapping("/student/home")
-    @Transactional(readOnly = true)
-    public String studentHome(Model model) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String studentNumber = auth.getName();
-        
-        Student student = studentRepository.findByStudentNumber(studentNumber)
-            .orElseThrow(() -> new RuntimeException("Student not found"));
-        
-        model.addAttribute("student", student);
-        return "student/student_home";
-    }
 }

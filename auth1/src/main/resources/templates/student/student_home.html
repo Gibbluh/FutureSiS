@@ -3,15 +3,342 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Portal</title>
+    <style>
+        body {
+            background: #f7f7f7;
+            font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 32px auto;
+            padding: 24px;
+        }
+        .header {
+            background: #fff;
+            padding: 20px 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            margin-bottom: 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .welcome-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #222;
+        }
+        .student-number {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 4px;
+        }
+        .logout-btn {
+            background-color: #d32f2f;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover {
+            background-color: #b71c1c;
+        }
+        .dashboard-card {
+            background: #fff;
+            padding: 32px 32px 24px 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            margin-bottom: 32px;
+        }
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #222;
+            margin-bottom: 24px;
+        }
+        .elongated-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .elongated-table th, .elongated-table td {
+            padding: 18px 16px;
+            text-align: left;
+            font-size: 1.05rem;
+        }
+        .elongated-table th {
+            background: #f5f7fa;
+            color: #222;
+            font-weight: 700;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .elongated-table tr:not(:last-child) td {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .elongated-table tr:nth-child(even) {
+            background: #fafbfc;
+        }
+        .grade-cell {
+            font-weight: 500;
+        }
+        .grade-passed {
+            color: #2e7d32;
+        }
+        .grade-failed {
+            color: #c62828;
+        }
+        .grade-na {
+            color: #757575;
+        }
+    </style>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
-    <div style="text-align: center;">
-        <h2>Welcome, Student!</h2>
-        <p>Your student number: <span th:text="${#authentication.name}"></span></p>
-        
-        <form th:action="@{/student/logout}" method="post">
-            <button type="submit">Logout</button>
-        </form>
+    <div class="dashboard-container">
+        <div class="header">
+            <div>
+                <div class="welcome-text">
+                    Welcome,
+                    <span th:if="${student != null}" th:text="${#strings.concat(student.firstName, ' ', student.lastName)}"></span>
+                    <span th:if="${student == null}">Student</span>!
+                </div>
+                <div class="student-number">
+                    Student Number:
+                    <span th:if="${student != null}" th:text="${student.studentNumber}"></span>
+                    <span th:if="${student == null}" th:text="${#authentication.name}"></span>
+                </div>
+                <div style="margin-top: 8px; font-size: 1rem; color: #444;">
+                    <span><b>Year Level:</b>
+                        <span th:if="${student != null}">
+                            <span th:switch="${student.enrollmentYear}">
+                                <span th:case="1">1st Year</span>
+                                <span th:case="2">2nd Year</span>
+                                <span th:case="3">3rd Year</span>
+                                <span th:case="4">4th Year</span>
+                                <span th:case="*" th:text="${student.enrollmentYear}"></span>
+                            </span>
+                        </span>
+                        <span th:if="${student == null}">N/A</span>
+                    </span>
+                    &nbsp;|&nbsp;
+                    <span><b>Semester:</b>
+                        <span th:if="${student != null}">
+                            <span th:switch="${student.currentSemester}">
+                                <span th:case="1">1st Semester</span>
+                                <span th:case="2">2nd Semester</span>
+                                <span th:case="*" th:text="${student.currentSemester}"></span>
+                            </span>
+                        </span>
+                        <span th:if="${student == null}">N/A</span>
+                    </span>
+                    &nbsp;|&nbsp;
+                    <span><b>Academic Year:</b>
+                        <span th:if="${currentAcademicYear != null}" th:text="${currentAcademicYear}"></span>
+                        <span th:if="${currentAcademicYear == null}">N/A</span>
+                    </span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <form th:action="@{/student/logout}" method="post" style="margin: 0;">
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Current Courses & Grades Table -->
+        <div class="dashboard-card">
+            <div class="card-title" style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>My Current Courses & Grades</span>
+                    <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px;">
+                        <button id="viewSubjectsBtn" class="btn-primary" style="margin-right: 16px;">View Subjects by Year/Semester</button>
+                        <span style="color: #4CAF50; font-weight: bold;">GWA: <span th:text="${gwa}"></span></span>
+                    </div>
+                </div>
+                <div style="font-size: 1rem; color: #1976d2; font-weight: 500;">
+                    <span th:if="${student != null}">
+                        <span th:switch="${student.currentSemester}">
+                            <span th:case="1">First Semester</span>
+                            <span th:case="2">Second Semester</span>
+                            <span th:case="*" th:text="${student.currentSemester}"></span>
+                        </span>
+                    </span>
+                    <span th:if="${student == null}">N/A</span>,
+                    <span th:if="${currentAcademicYear != null}" th:text="${currentAcademicYear}"></span>
+                    <span th:if="${currentAcademicYear == null}">N/A</span>
+                </div>
+            </div>
+            <table class="elongated-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Instructor</th>
+                        <th>Units</th>
+                        <th>Section</th>
+                        <th>Grade</th>
+                        <th>Letter Grade</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="course, iterStat : ${currentCourses}">
+                        <td th:text="${iterStat.index + 1}">1</td>
+                        <td th:text="${course.code}">COMP 009</td>
+                        <td th:text="${course.name}">Object Oriented Programming</td>
+                        <td th:text="${course.instructor}">LABAO, CHRISTIAN JAY MENDOZA</td>
+                        <td th:text="${course.units}">3.0</td>
+                        <td th:text="${course.section}">BSIT-SP 2-1</td>
+                        <td th:text="${course.rawGrade}" 
+                            th:class="${course.status == 'PASSED' ? 'grade-cell grade-passed' : 
+                                     course.status == 'FAILED' ? 'grade-cell grade-failed' : 
+                                     'grade-cell grade-na'}">N/A</td>
+                        <td th:text="${course.letterGrade}"
+                            th:class="${course.status == 'PASSED' ? 'grade-cell grade-passed' : 
+                                     course.status == 'FAILED' ? 'grade-cell grade-failed' : 
+                                     'grade-cell grade-na'}">N/A</td>
+                        <td th:text="${course.status}"
+                            th:class="${course.status == 'PASSED' ? 'grade-cell grade-passed' : 
+                                     course.status == 'FAILED' ? 'grade-cell grade-failed' : 
+                                     'grade-cell grade-na'}">N/A</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+                <button type="button"
+                        class="btn btn-primary"
+                        id="requestApprovalBtn"
+                        th:attr="data-academic-year=${currentAcademicYear}, data-semester=${student.currentSemester}"
+                        style="padding: 10px 24px; border-radius: 6px; background-color: #2196F3; color: white; font-weight: 500; font-size: 1rem;"
+                        th:disabled="${!canRequestApproval}"
+                        th:title="${!canRequestApproval} ? 'Complete all grades to request approval' : null">
+                    Request Semester Approval
+                </button>
+            </div>
+        </div>
+        <div id="approvalToast" style="display:none; position:fixed; bottom:30px; right:30px; background:#2196F3; color:white; padding:16px 24px; border-radius:8px; font-size:1.1rem; z-index:9999;">
+            Request for approval has been sent!
+        </div>
+        <!-- Modal for viewing subjects by year/semester -->
+        <div id="subjectsModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background:#fff; margin:40px auto; padding:24px; border-radius:8px; max-width:800px; position:relative;">
+                <span class="close" id="closeSubjectsModal" style="position:absolute; top:12px; right:18px; font-size:32px; cursor:pointer;">&times;</span>
+                <h2>Subjects by Year Level & Semester</h2>
+                <div id="subjectsModalBody">
+                    <div style="text-align:center; color:#888;">Loading subjects...</div>
+                </div>
+            </div>
+        </div>
+        <script>
+        document.getElementById('requestApprovalBtn').addEventListener('click', function() {
+            var btn = this;
+            btn.disabled = true;
+            var academicYear = btn.getAttribute('data-academic-year');
+            var semester = btn.getAttribute('data-semester');
+            var formData = new URLSearchParams();
+            formData.append('academicYear', academicYear);
+            formData.append('semester', semester);
+
+            // Get CSRF token and header name from meta tags
+            var csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            var csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            fetch('/approvals/request', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    [csrfHeader]: csrfToken // Add CSRF token here
+                },
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    btn.disabled = true;
+                    showToast();
+                } else {
+                    alert('Failed to send request. Please try again.');
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => {
+                alert('Failed to send request. Please try again.');
+                btn.disabled = false;
+            });
+        });
+
+        function showToast() {
+            var toast = document.getElementById('approvalToast');
+            toast.style.display = 'block';
+            setTimeout(function() {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        document.getElementById('viewSubjectsBtn').addEventListener('click', function() {
+            document.getElementById('subjectsModal').style.display = 'block';
+            loadSubjectsByYearSemester();
+        });
+        document.getElementById('closeSubjectsModal').onclick = function() {
+            document.getElementById('subjectsModal').style.display = 'none';
+        };
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('subjectsModal')) {
+                document.getElementById('subjectsModal').style.display = 'none';
+            }
+        };
+
+        function loadSubjectsByYearSemester() {
+            const modalBody = document.getElementById('subjectsModalBody');
+            modalBody.innerHTML = '<div style="text-align:center; color:#888;">Loading subjects...</div>';
+            fetch('/student/subjects/all', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.subjects || data.subjects.length === 0) {
+                    modalBody.innerHTML = '<div style="text-align:center; color:#888;">No subjects found.</div>';
+                    return;
+                }
+                // Group by year and semester
+                const grouped = {};
+                data.subjects.forEach(subj => {
+                    const key = `Year ${subj.yearLevel} - Semester ${subj.semester}`;
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(subj);
+                });
+                let html = '';
+                Object.entries(grouped).forEach(([group, subjects]) => {
+                    html += `<div style="margin-bottom:24px;">
+                                <h3 style="color:#007bff; margin-bottom:10px;">${group}</h3>
+                                <ul style="padding-left:20px;">`;
+                    subjects.forEach(subj => {
+                        html += `<li><strong>${subj.code}</strong>: ${subj.name}</li>`;
+                    });
+                    html += '</ul></div>';
+                });
+                modalBody.innerHTML = html;
+            })
+            .catch(() => {
+                modalBody.innerHTML = '<div style="text-align:center; color:#e74c3c;">Error loading subjects.</div>';
+            });
+        }
+        </script>
     </div>
 </body>
 </html>

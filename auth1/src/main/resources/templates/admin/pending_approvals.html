@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pending Semester Approvals</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container py-4">
+        <div style="margin-bottom: 16px;">
+            <a href="/admin/home" class="btn btn-secondary">&larr; Back to Dashboard</a>
+        </div>
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h4 mb-0">Pending Semester Approvals</h2>
+            </div>
+            
+            <div class="card-body">
+                <!-- Success/Error Messages -->
+                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <!-- Pending Requests -->
+                <div th:if="${requests.empty}" class="alert alert-info">
+                    No pending approval requests found.
+                </div>
+                <div th:if="${!requests.empty}" class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Program</th>
+                                <th>Year Level</th>
+                                <th>Academic Year</th>
+                                <th>Semester</th>
+                                <th>Request Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="request : ${requests}">
+                                <td>
+                                    <span th:text="${request.student.firstName + ' ' + request.student.lastName}"></span>
+                                    <br>
+                                    <small class="text-muted" th:text="${request.student.studentNumber}"></small>
+                                </td>
+                                <td th:text="${request.student.program.name}"></td>
+                                <td th:text="${request.student.enrollmentYear}"></td>
+                                <td th:text="${request.academicYear}"></td>
+                                <td th:text="${request.semester}"></td>
+                                <td th:text="${#temporals.format(request.requestDate, 'yyyy-MM-dd HH:mm')}"></td>
+                                <td>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-success" 
+                                            data-toggle="modal" 
+                                            th:data-target="${'#approveModal' + request.id}">
+                                        Approve
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-danger" 
+                                            data-toggle="modal" 
+                                            th:data-target="${'#rejectModal' + request.id}">
+                                        Reject
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval/Rejection Modals -->
+    <div th:each="request : ${requests}">
+        <!-- Approve Modal -->
+        <div class="modal fade" th:id="${'approveModal' + request.id}" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title">Approve Request</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <form th:action="@{/approvals/{id}/process(id=${request.id})}" method="post">
+                        <div class="modal-body">
+                            <input type="hidden" name="approved" value="true">
+                            <p>Are you sure you want to approve this request?</p>
+                            <p><strong>Student:</strong> <span th:text="${request.student.firstName + ' ' + request.student.lastName}"></span></p>
+                            <p><strong>Academic Year:</strong> <span th:text="${request.academicYear}"></span></p>
+                            <p><strong>Semester:</strong> <span th:text="${request.semester}"></span></p>
+                            
+                            <div class="form-group">
+                                <label for="approveComments">Comments (optional):</label>
+                                <textarea class="form-control" id="approveComments" name="comments" rows="3"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-success">Approve Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reject Modal -->
+        <div class="modal fade" th:id="${'rejectModal' + request.id}" tabindex="-1" role="dialog">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">Reject Request</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <form th:action="@{/approvals/{id}/process(id=${request.id})}" method="post">
+                        <div class="modal-body">
+                            <input type="hidden" name="approved" value="false">
+                            <p>Are you sure you want to reject this request?</p>
+                            <p><strong>Student:</strong> <span th:text="${request.student.firstName + ' ' + request.student.lastName}"></span></p>
+                            <p><strong>Academic Year:</strong> <span th:text="${request.academicYear}"></span></p>
+                            <p><strong>Semester:</strong> <span th:text="${request.semester}"></span></p>
+                            
+                            <div class="form-group">
+                                <label for="rejectComments">Reason for rejection (required):</label>
+                                <textarea class="form-control" id="rejectComments" name="comments" rows="3" required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Reject Request</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

@@ -3,6 +3,7 @@ package com.example.auth1.controller;
 import com.example.auth1.model.*;
 import com.example.auth1.repository.*;
 import com.example.auth1.service.StudentNumberGenerator;
+import com.example.auth1.service.SemesterApprovalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -35,6 +36,7 @@ public class AdminController {
     private final CourseRepository courseRepository;
     private final SubjectRepository subjectRepository;
     private final TeachingAssignmentRepository teachingAssignmentRepository;
+    private final SemesterApprovalService semesterApprovalService;
 
     public AdminController(StudentRepository studentRepository,
                         StudentNumberGenerator studentNumberGenerator,
@@ -43,7 +45,8 @@ public class AdminController {
                         FacultyRepository facultyRepository,
                         CourseRepository courseRepository,
                         SubjectRepository subjectRepository,
-                        TeachingAssignmentRepository teachingAssignmentRepository) {
+                        TeachingAssignmentRepository teachingAssignmentRepository,
+                        SemesterApprovalService semesterApprovalService) {
         this.studentRepository = studentRepository;
         this.studentNumberGenerator = studentNumberGenerator;
         this.passwordEncoder = passwordEncoder;
@@ -52,6 +55,7 @@ public class AdminController {
         this.courseRepository = courseRepository;
         this.subjectRepository = subjectRepository;
         this.teachingAssignmentRepository = teachingAssignmentRepository;
+        this.semesterApprovalService = semesterApprovalService;
     }
 
     @GetMapping("/login")
@@ -84,6 +88,9 @@ public class AdminController {
             List<Integer> enrollmentYears = IntStream.rangeClosed(currentYear - 4, currentYear + 5)
                 .boxed().collect(Collectors.toList());
             model.addAttribute("enrollmentYears", enrollmentYears);
+            
+            // Add pending approvals for the dashboard tab
+            model.addAttribute("pendingApprovals", semesterApprovalService.getPendingRequests());
             
             logger.debug("Successfully prepared admin home page model");
             return "admin/admin_home";
@@ -394,79 +401,69 @@ public class AdminController {
                 faculty.setPassword(passwordEncoder.encode(password));
             }
             
-            // Clear existing relationships
+            // Clear existing programs and add new ones
             faculty.clearFacultyPrograms();
-            faculty.clearTeachingAssignments();
-            
-            // Save to ensure relationships are cleared
-            faculty = facultyRepository.saveAndFlush(faculty);
-            
-            // Add new program assignments
             List<Program> programs = programRepository.findAllById(programIds);
             for (Program program : programs) {
                 FacultyProgram fp = new FacultyProgram();
                 fp.setProgram(program);
-                fp.setFaculty(faculty); // Set both sides of the relationship
-                faculty.getFacultyPrograms().add(fp); // Add directly to the set
+                fp.setFaculty(faculty);
+                faculty.getFacultyPrograms().add(fp);
             }
-            
-            // Save faculty with program assignments
             faculty = facultyRepository.saveAndFlush(faculty);
             
-            // Get current academic year
+            // --- MERGE teaching assignments instead of clearing all ---
             final String currentAcademicYear = getCurrentAcademicYear();
-            
-            // Clear and update teaching assignments
-            faculty.clearTeachingAssignments();
-            facultyRepository.save(faculty); // Save to ensure teaching assignments are cleared
-            
-            // Handle teaching assignments
+            // Parse new assignments from request
+            List<Map<String, Object>> newAssignments = new java.util.ArrayList<>();
             if (subjectAssignments != null && !subjectAssignments.trim().isEmpty()) {
                 try {
                     ObjectMapper mapper = new ObjectMapper();
-                    List<Map<String, Object>> assignments = mapper.readValue(subjectAssignments, 
-                        new TypeReference<List<Map<String, Object>>>() {});
-                    
-                    logger.info("Processing {} subject assignments", assignments.size());
-                    
-                    for (Map<String, Object> assignment : assignments) {
-                        Long subjectId = ((Number) assignment.get("id")).longValue();
-                        Integer yearLevel = (Integer) assignment.get("yearLevel");
-                        Integer semester = (Integer) assignment.get("semester");
-                        
-                        logger.info("Processing assignment - Subject ID: {}, Year: {}, Semester: {}", 
-                            subjectId, yearLevel, semester);
-                        
-                        Subject subject = subjectRepository.findById(subjectId)
-                            .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
-                        
-                        // Check if subject belongs to one of the faculty's programs
-                        boolean isValidSubject = programs.stream()
-                            .anyMatch(program -> subject.getCourse().getProgram().getId().equals(program.getId()));
-                        
-                        if (!isValidSubject) {
-                            throw new RuntimeException("Subject " + subject.getCode() + " does not belong to any of the faculty's assigned programs");
-                        }
-                        
-                        TeachingAssignment teachingAssignment = new TeachingAssignment();
-                        teachingAssignment.setSubject(subject);
-                        teachingAssignment.setAcademicYear(currentAcademicYear);
-                        teachingAssignment.setSemester(semester);
-                        faculty.addTeachingAssignment(teachingAssignment);
-                    }
+                    newAssignments = mapper.readValue(subjectAssignments, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
                 } catch (Exception e) {
                     logger.error("Error processing subject assignments: {}", e.getMessage(), e);
                     throw new RuntimeException("Error processing subject assignments: " + e.getMessage());
                 }
             }
-            
-            // Final save with all updates
+            // Build a set of (subjectId, semester) for new assignments
+            java.util.Set<String> newAssignmentKeys = new java.util.HashSet<>();
+            for (Map<String, Object> assignment : newAssignments) {
+                Long subjectId = ((Number) assignment.get("id")).longValue();
+                Integer semester = (Integer) assignment.get("semester");
+                newAssignmentKeys.add(subjectId + ":" + semester);
+            }
+            // Remove only assignments for the current academic year that are not in the new list
+            faculty.getTeachingAssignments().removeIf(ta ->
+                ta.getAcademicYear().equals(currentAcademicYear) &&
+                !newAssignmentKeys.contains(ta.getSubject().getId() + ":" + ta.getSemester())
+            );
+            // Add new assignments that don't already exist
+            for (Map<String, Object> assignment : newAssignments) {
+                Long subjectId = ((Number) assignment.get("id")).longValue();
+                Integer semester = (Integer) assignment.get("semester");
+                boolean alreadyAssigned = faculty.getTeachingAssignments().stream().anyMatch(ta ->
+                    ta.getSubject().getId().equals(subjectId) &&
+                    ta.getAcademicYear().equals(currentAcademicYear) &&
+                    ta.getSemester().equals(semester)
+                );
+                if (!alreadyAssigned) {
+                    Subject subject = subjectRepository.findById(subjectId)
+                        .orElseThrow(() -> new RuntimeException("Subject not found: " + subjectId));
+                    // Check if subject belongs to one of the faculty's programs
+                    boolean isValidSubject = programs.stream()
+                        .anyMatch(program -> subject.getCourse().getProgram().getId().equals(program.getId()));
+                    if (!isValidSubject) {
+                        throw new RuntimeException("Subject " + subject.getCode() + " does not belong to any of the faculty's assigned programs");
+                    }
+                    TeachingAssignment teachingAssignment = new TeachingAssignment();
+                    teachingAssignment.setSubject(subject);
+                    teachingAssignment.setAcademicYear(currentAcademicYear);
+                    teachingAssignment.setSemester(semester);
+                    faculty.addTeachingAssignment(teachingAssignment);
+                }
+            }
             faculty = facultyRepository.save(faculty);
-            
-            logger.info("Successfully updated faculty. Teaching assignments count: {}", 
-                faculty.getTeachingAssignments().size());
-            
-            // Return updated faculty data
+            logger.info("Successfully updated faculty. Teaching assignments count: {}", faculty.getTeachingAssignments().size());
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "Faculty updated successfully");
@@ -474,25 +471,18 @@ public class AdminController {
                 "id", faculty.getId(),
                 "facultyId", faculty.getFacultyId(),
                 "name", faculty.getFirstName() + " " + faculty.getLastName(),
-                "departments", faculty.getFacultyPrograms().stream()
-                    .map(fp -> fp.getProgram().getName())
-                    .collect(Collectors.toList()),
-                "subjects", faculty.getTeachingAssignments().stream()
-                    .map(ta -> Map.of(
-                        "id", ta.getSubject().getId(),
-                        "code", ta.getSubject().getCode(),
-                        "name", ta.getSubject().getName(),
-                        "semester", ta.getSemester()
-                    ))
-                    .collect(Collectors.toList())
+                "departments", faculty.getFacultyPrograms().stream().map(fp -> fp.getProgram().getName()).collect(Collectors.toList()),
+                "subjects", faculty.getTeachingAssignments().stream().map(ta -> Map.of(
+                    "id", ta.getSubject().getId(),
+                    "code", ta.getSubject().getCode(),
+                    "name", ta.getSubject().getName(),
+                    "semester", ta.getSemester()
+                )).collect(Collectors.toList())
             ));
-            
             return ResponseEntity.ok(response);
-            
         } catch (Exception e) {
             logger.error("Error updating faculty: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "Error updating faculty: " + e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("error", "Error updating faculty: " + e.getMessage()));
         }
     }
 

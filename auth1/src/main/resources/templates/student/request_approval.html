@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Request Semester Approval</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h4 mb-0">Request Semester Approval</h2>
+            </div>
+            
+            <div class="card-body">
+                <!-- Success/Error Messages -->
+                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+                <!-- Student Info -->
+                <div class="mb-4">
+                    <h3 class="h5">Student Information</h3>
+                    <p><strong>Name:</strong> <span th:text="${student.firstName + ' ' + student.lastName}"></span></p>
+                    <p><strong>Program:</strong> <span th:text="${student.program.name}"></span></p>
+                    <p><strong>Year Level:</strong> <span th:text="${student.enrollmentYear}"></span></p>
+                    <p><strong>Current Semester:</strong> <span th:text="${student.currentSemester}"></span></p>
+                </div>
+
+                <!-- Request Form -->
+                <div th:if="${canRequest}" class="mb-4">
+                    <h3 class="h5">Submit New Request</h3>
+                    <form th:action="@{/approvals/request}" method="post" class="needs-validation" novalidate>
+                        <input type="hidden" name="academicYear" th:value="${currentAcademicYear}">
+                        <input type="hidden" name="semester" th:value="${student.currentSemester}">
+                        
+                        <div class="alert alert-info">
+                            <p>You are requesting approval for:</p>
+                            <ul>
+                                <li>Academic Year: <span th:text="${currentAcademicYear}"></span></li>
+                                <li>Semester: <span th:text="${student.currentSemester}"></span></li>
+                            </ul>
+                            <p class="mb-0">Please ensure all your grades are completed before submitting this request.</p>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </form>
+                </div>
+
+                <!-- Previous Requests -->
+                <div class="mt-4">
+                    <h3 class="h5">Previous Requests</h3>
+                    <div th:if="${requests.empty}" class="alert alert-info">
+                        No previous requests found.
+                    </div>
+                    <div th:if="${!requests.empty}" class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Academic Year</th>
+                                    <th>Semester</th>
+                                    <th>Request Date</th>
+                                    <th>Status</th>
+                                    <th>Approval Date</th>
+                                    <th>Comments</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="request : ${requests}">
+                                    <td th:text="${request.academicYear}"></td>
+                                    <td th:text="${request.semester}"></td>
+                                    <td th:text="${#temporals.format(request.requestDate, 'yyyy-MM-dd HH:mm')}"></td>
+                                    <td>
+                                        <span th:class="${'badge ' + 
+                                            (request.status == 'APPROVED' ? 'badge-success' : 
+                                             request.status == 'REJECTED' ? 'badge-danger' : 
+                                             'badge-warning')}"
+                                              th:text="${request.status}">
+                                        </span>
+                                    </td>
+                                    <td th:text="${request.approvalDate != null ? 
+                                        #temporals.format(request.approvalDate, 'yyyy-MM-dd HH:mm') : '-'}">
+                                    </td>
+                                    <td th:text="${request.comments != null ? request.comments : '-'}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html> 

@@ -691,10 +691,15 @@
         <div class="header">
             <h2>Admin Dashboard</h2>
             <p>Welcome, <span th:text="${username}"></span>!</p>
-            <form th:action="@{/admin/logout}" method="post">
-                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button type="submit" class="logout-btn">Logout</button>
-            </form>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <!-- <a th:href="@{/approvals/pending}" class="btn" style="text-decoration: none; color: white; background-color: #2196F3; padding: 10px 20px; border-radius: 4px; display: inline-block;">
+                    Pending Approvals
+                </a> -->
+                <form th:action="@{/admin/logout}" method="post" style="margin: 0;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="logout-btn">Logout</button>
+                </form>
+            </div>
         </div>
 
         <!-- Add Forms Section -->
@@ -934,6 +939,7 @@
             <div class="tabs">
                 <button class="tab active" onclick="switchRecordTab(event, 'student-records')">Student Records</button>
                 <button class="tab" onclick="switchRecordTab(event, 'faculty-records')">Faculty Records</button>
+                <button class="tab" onclick="switchRecordTab(event, 'pending-approvals')">Pending Approvals</button>
             </div>
 
             <div class="tab-contents">
@@ -1087,6 +1093,51 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pending Approvals -->
+            <div id="pending-approvals" class="tab-content">
+                <h2>Pending Semester Approval Requests</h2>
+                <div th:if="${pendingApprovals != null and !pendingApprovals.empty}">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student Number</th>
+                                <th>Name</th>
+                                <th>Year Level</th>
+                                <th>Semester</th>
+                                <th>Academic Year</th>
+                                <th>Request Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="approval : ${pendingApprovals}" th:id="'approval-row-' + ${approval.id}">
+                                <td th:text="${approval.student.studentNumber}"></td>
+                                <td th:text="${approval.student.firstName + ' ' + approval.student.lastName}"></td>
+                                <td th:text="${approval.student.enrollmentYear}"></td>
+                                <td th:text="${approval.semester == 1 ? '1st Semester' : (approval.semester == 2 ? '2nd Semester' : approval.semester)}"></td>
+                                <td th:text="${approval.academicYear}"></td>
+                                <td th:text="${#temporals.format(approval.requestDate, 'yyyy-MM-dd HH:mm')}"></td>
+                                <td>
+                                    <form class="approval-action-form" th:action="@{'/approvals/' + ${approval.id} + '/process'}" method="post" th:attr="data-approval-id=${approval.id}" style="display:inline;">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="approved" value="true"/>
+                                        <button type="submit" class="btn-primary">Approve</button>
+                                    </form>
+                                    <form class="approval-action-form" th:action="@{'/approvals/' + ${approval.id} + '/process'}" method="post" th:attr="data-approval-id=${approval.id}" style="display:inline; margin-left: 8px;">
+                                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                        <input type="hidden" name="approved" value="false"/>
+                                        <button type="submit" style="background-color: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 4px;">Deny</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div th:if="${pendingApprovals == null or pendingApprovals.empty}" class="message">
+                    No pending approval requests.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1201,6 +1252,11 @@
                 </form>
             </div>
         </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="approval-toast" style="display:none; position: fixed; top: 40px; right: 40px; z-index: 9999; min-width: 250px; background: #323232; color: #fff; padding: 16px 28px; border-radius: 6px; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); opacity: 0.95; transition: opacity 0.3s;">
+        <span id="approval-toast-message"></span>
     </div>
 
     <script>
@@ -1630,45 +1686,14 @@
             }
         }
 
-        function switchRecordTab(event, tabId) {
-            console.log('switchRecordTab called with:', { event, tabId });
-            
-            // Get the container for record tabs
-            const container = document.querySelector('.records-section');
-            console.log('Records container:', container);
-            
-            // Hide all record tab contents
-            const tabContents = container.querySelectorAll('.tab-contents > .tab-content');
-            console.log('Found record tab contents:', tabContents.length);
-            tabContents.forEach(content => {
-                content.classList.remove('active');
-                console.log('Removed active from:', content.id);
-            });
-            
-            // Deactivate all record tabs
-            const tabs = container.querySelectorAll('.tabs > .tab');
-            console.log('Found record tabs:', tabs.length);
-            tabs.forEach(tab => {
-                tab.classList.remove('active');
-                console.log('Removed active from tab:', tab.textContent);
-            });
-            
-            // Activate selected tab and content
-            const selectedContent = document.getElementById(tabId);
-            const selectedTab = event.target;
-            console.log('Activating:', { content: selectedContent, tab: selectedTab });
-            
-            if (selectedContent) {
-                selectedContent.classList.add('active');
-            } else {
-                console.error('Could not find tab content:', tabId);
-            }
-            
-            if (selectedTab) {
-                selectedTab.classList.add('active');
-            } else {
-                console.error('Could not find tab element');
-            }
+        function switchRecordTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.querySelectorAll('.records-section .tab-content');
+            tablinks = document.querySelectorAll('.records-section .tab');
+            tabcontent.forEach(function(tc) { tc.classList.remove('active'); });
+            tablinks.forEach(function(tl) { tl.classList.remove('active'); });
+            document.getElementById(tabName).classList.add('tab-content', 'active');
+            evt.currentTarget.classList.add('active');
         }
 
         function resetForm(form) {
@@ -2070,6 +2095,50 @@
                 selections: Array.from(window.selectedSubjects.entries())
             });
         }
+
+        function showApprovalToast(message) {
+            const toast = document.getElementById('approval-toast');
+            const toastMsg = document.getElementById('approval-toast-message');
+            toastMsg.textContent = message;
+            toast.style.display = 'block';
+            toast.style.opacity = '0.95';
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => { toast.style.display = 'none'; }, 400);
+            }, 2200);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.approval-action-form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const formData = new FormData(form);
+                    const action = form.getAttribute('action');
+                    const approvalId = form.getAttribute('data-approval-id');
+                    fetch(action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams([...formData])
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            // Remove the row from the table
+                            const row = document.getElementById('approval-row-' + approvalId);
+                            if (row) row.remove();
+                            // Show toast
+                            const isApprove = form.querySelector('input[name="approved"]').value === 'true';
+                            showApprovalToast(isApprove ? 'Request approved successfully' : 'Request denied successfully');
+                        } else {
+                            alert('Failed to process request.');
+                        }
+                    })
+                    .catch(() => alert('Error processing request.'));
+                });
+            });
+        });
     </script>
     
     <!-- Add the faculty-form.js script -->

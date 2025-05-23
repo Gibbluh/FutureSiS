@@ -10,64 +10,117 @@
             padding: 20px;
             background-color: #f9f9f9;
         }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .manage-programs-card {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+            padding: 32px 32px 24px 32px;
+            text-align: center;
         }
         h2 {
             text-align: center;
-            color: #333;
+            color: #222;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 18px;
         }
-        table {
+        .btn-add-program {
+            background: #4CAF50;
+            color: #fff;
+            margin-bottom: 24px;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+            box-shadow: 0 2px 8px rgba(76,175,80,0.08);
+            display: inline-block;
+        }
+        .btn-add-program:hover {
+            background: #388e3c;
+        }
+        .manage-programs-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 0;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
-        th, td {
-            padding: 10px;
-            border: 1px solid #ccc;
+        .manage-programs-table th, .manage-programs-table td {
+            padding: 16px 12px;
+            font-size: 1.08rem;
+        }
+        .manage-programs-table th {
+            background: #f5f7fa;
+            font-weight: 700;
+            color: #222;
+        }
+        .manage-programs-table td {
+            vertical-align: middle;
+        }
+        .manage-programs-table th:first-child,
+        .manage-programs-table td:first-child {
+            text-align: center;
+            width: 60px;
+        }
+        .manage-programs-table th:nth-child(2),
+        .manage-programs-table td:nth-child(2) {
             text-align: left;
         }
-        th {
-            background-color: #f2f2f2;
+        .manage-programs-table th:last-child,
+        .manage-programs-table td:last-child {
+            text-align: center;
+            width: 200px;
         }
-        .btn {
-            display: inline-block;
-            text-decoration: none;
-            color: white;
-            background-color: #4CAF50;
-            padding: 10px 20px;
-            border-radius: 4px;
-            margin-top: 20px;
+        .program-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
         }
-        .btn-danger {
-            background-color: #f44336;
-        }
-        .btn-primary {
-            background-color: #2196F3;
-        }
-        .action-btn {
-            padding: 8px 12px;
-            color: white;
+        .program-action-btn {
+            padding: 8px 22px;
+            font-size: 1rem;
+            border-radius: 6px;
             border: none;
-            border-radius: 4px;
             cursor: pointer;
-            margin-right: 5px;
+            transition: background 0.2s;
+            font-weight: 500;
         }
-        .action-btn:hover {
-            opacity: 0.8;
+        .program-edit-btn {
+            background: #2196F3;
+            color: #fff;
+            text-decoration: none;
+            font-family: inherit;
+            font-weight: 600;
+        }
+        .program-edit-btn:hover {
+            background: #1769aa;
+        }
+        .program-delete-btn {
+            background: #f44336;
+            color: #fff;
+            font-family: inherit;
+            font-weight: 600;
+        }
+        .program-delete-btn:hover {
+            background: #b71c1c;
         }
         .back-link {
             display: block;
-            margin-top: 20px;
+            margin-top: 36px;
             text-align: center;
             text-decoration: none;
-            color: #4CAF50;
-            font-weight: bold;
+            color: #388e3c;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
         }
         .back-link:hover {
             text-decoration: underline;
@@ -89,16 +142,16 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="manage-programs-card">
         <h2>Manage Programs</h2>
 
         <!-- Success/Error Messages -->
         <div th:if="${successMessage}" class="message success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}"></div>
 
-        <a href="/admin/programs/add" class="btn">Add Program</a>
+        <button onclick="window.location.href='/admin/programs/add'" class="btn-add-program">Add Program</button>
 
-        <table>
+        <table class="manage-programs-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -111,11 +164,13 @@
                     <td th:text="${program.id}"></td>
                     <td th:text="${program.name}"></td>
                     <td>
-                        <a th:href="@{'/admin/programs/edit/' + ${program.id}}" class="btn btn-primary">Edit</a>
-                        <form th:action="@{'/admin/programs/delete/' + ${program.id}}" method="post" style="display: inline;">
-                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
+                        <div class="program-actions">
+                            <a th:href="@{'/admin/programs/edit/' + ${program.id}}" class="program-action-btn program-edit-btn">Edit</a>
+                            <form th:action="@{'/admin/programs/delete/' + ${program.id}}" method="post" style="display: inline;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="program-action-btn program-delete-btn">Delete</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
             </tbody>
