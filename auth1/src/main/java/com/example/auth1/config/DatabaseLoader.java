@@ -119,39 +119,39 @@ public class DatabaseLoader implements CommandLineRunner {
         assignTeachingLoad(engProf2, programs.get(2), 1, 2, currentAcademicYear); // First year, second sem Engineering subjects
 
         // 4. Create sample students
-        List<Student> students = new ArrayList<>();
-        
-        // CS Students
-        students.addAll(List.of(
-            createStudent("2023-CS-001", "John", "Doe", "john.doe@school.edu", 
-                         LocalDate.of(2000, 5, 15), programs.get(0), 1, 1),
-            createStudent("2023-CS-002", "Alice", "Johnson", "alice.j@school.edu", 
-                         LocalDate.of(2000, 6, 20), programs.get(0), 1, 1),
-            createStudent("2022-CS-001", "Bob", "Smith", "bob.s@school.edu", 
-                         LocalDate.of(1999, 7, 10), programs.get(0), 2, 1)
-        ));
-        
-        // Business Students
-        students.addAll(List.of(
-            createStudent("2023-BA-001", "Emma", "Davis", "emma.d@school.edu", 
-                         LocalDate.of(2001, 3, 25), programs.get(1), 1, 1),
-            createStudent("2023-BA-002", "James", "Wilson", "james.w@school.edu", 
-                         LocalDate.of(2001, 4, 15), programs.get(1), 1, 1),
-            createStudent("2022-BA-001", "Sarah", "Brown", "sarah.b@school.edu", 
-                         LocalDate.of(2000, 8, 5), programs.get(1), 2, 1)
-        ));
-        
-        // Engineering Students
-        students.addAll(List.of(
-            createStudent("2023-EE-001", "Michael", "Lee", "michael.l@school.edu", 
-                         LocalDate.of(2000, 9, 30), programs.get(2), 1, 1),
-            createStudent("2023-EE-002", "Emily", "Taylor", "emily.t@school.edu", 
-                         LocalDate.of(2000, 10, 12), programs.get(2), 1, 1),
-            createStudent("2022-EE-001", "David", "Anderson", "david.a@school.edu", 
-                         LocalDate.of(1999, 11, 20), programs.get(2), 2, 1)
-        ));
-        
-        studentRepository.saveAll(students);
+        // List<Student> students = new ArrayList<>();
+        // 
+        // // CS Students
+        // students.addAll(List.of(
+        //     createStudent("2023-CS-001", "John", "Doe", "john.doe@school.edu", 
+        //                  LocalDate.of(2000, 5, 15), programs.get(0), 1, 1),
+        //     createStudent("2023-CS-002", "Alice", "Johnson", "alice.j@school.edu", 
+        //                  LocalDate.of(2000, 6, 20), programs.get(0), 1, 1),
+        //     createStudent("2022-CS-001", "Bob", "Smith", "bob.s@school.edu", 
+        //                  LocalDate.of(1999, 7, 10), programs.get(0), 2, 1)
+        // ));
+        // 
+        // // Business Students
+        // students.addAll(List.of(
+        //     createStudent("2023-BA-001", "Emma", "Davis", "emma.d@school.edu", 
+        //                  LocalDate.of(2001, 3, 25), programs.get(1), 1, 1),
+        //     createStudent("2023-BA-002", "James", "Wilson", "james.w@school.edu", 
+        //                  LocalDate.of(2001, 4, 15), programs.get(1), 1, 1),
+        //     createStudent("2022-BA-001", "Sarah", "Brown", "sarah.b@school.edu", 
+        //                  LocalDate.of(2000, 8, 5), programs.get(1), 2, 1)
+        // ));
+        // 
+        // // Engineering Students
+        // students.addAll(List.of(
+        //     createStudent("2023-EE-001", "Michael", "Lee", "michael.l@school.edu", 
+        //                  LocalDate.of(2000, 9, 30), programs.get(2), 1, 1),
+        //     createStudent("2023-EE-002", "Emily", "Taylor", "emily.t@school.edu", 
+        //                  LocalDate.of(2000, 10, 12), programs.get(2), 1, 1),
+        //     createStudent("2022-EE-001", "David", "Anderson", "david.a@school.edu", 
+        //                  LocalDate.of(1999, 11, 20), programs.get(2), 2, 1)
+        // ));
+        // 
+        // studentRepository.saveAll(students);
 
         System.out.println("=== Sample Data Loaded ===");
         System.out.println("Admins: " + admins.size());
@@ -159,7 +159,7 @@ public class DatabaseLoader implements CommandLineRunner {
         System.out.println("Faculty: " + faculty.size());
         System.out.println("Courses: " + courseRepository.count());
         System.out.println("Subjects: " + subjectRepository.count());
-        System.out.println("Students: " + students.size());
+        System.out.println("Students: " + studentRepository.count());
         System.out.println("Faculty Programs: " + facultyProgramRepository.count());
         System.out.println("Teaching Assignments: " + teachingAssignmentRepository.count());
     }

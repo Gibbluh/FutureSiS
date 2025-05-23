@@ -5,9 +5,11 @@ import com.example.auth1.model.Subject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface StudentRepository extends JpaRepository<Student, Long> {
     // Exact match
     Optional<Student> findByStudentNumber(String studentNumber);
@@ -27,4 +29,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findBySubjectAndYearAndSemester(
         @Param("subject") Subject subject,
         @Param("semester") Integer semester);
+
+    Optional<Student> findByEmail(String email);
 }

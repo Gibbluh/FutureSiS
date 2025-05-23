@@ -92,9 +92,9 @@
             <div class="form-group">
                 <label for="studentNumber">Student Number:</label>
                 <input type="text" id="studentNumber" name="studentNumber" required
-                       placeholder="Example: 2023-CS-001"
-                       pattern="[0-9]{4}-CS-[0-9]{3}"
-                       title="Please enter your student number (Format: YYYY-CS-NNN)">
+                       placeholder="Example: STU-2025-00001"
+                       pattern="STU-\d{4}-\d{5}"
+                       title="Please enter your student number (Format: STU-YYYY-NNNNN)">
             </div>
             <div class="form-group">
                 <label for="birthDate">Birth Date:</label>
@@ -108,6 +108,9 @@
             </div>
             <div class="form-group">
                 <button type="submit">Login</button>
+            </div>
+            <div class="form-group" style="text-align: center; margin-top: 15px;">
+                <a th:href="@{/forgot-password}" style="color: #1976d2; text-decoration: none;">Forgot Password?</a>
             </div>
         </form>
     </div>

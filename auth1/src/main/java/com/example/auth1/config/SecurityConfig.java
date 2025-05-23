@@ -144,7 +144,7 @@ public class SecurityConfig {
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/css/**", "/js/**", "/images/**", "/error").permitAll()
+                .requestMatchers("/", "/home", "/css/**", "/js/**", "/images/**", "/error", "/forgot-password", "/reset-password").permitAll()
                 .anyRequest().authenticated())
             .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
         
