@@ -28,7 +28,7 @@
                 <!-- Request Form -->
                 <div th:if="${canRequest}" class="mb-4">
                     <h3 class="h5">Submit New Request</h3>
-                    <form th:action="@{/approvals/request}" method="post" class="needs-validation" novalidate>
+                    <form th:action="@{/student/approvals/request}" method="post" class="needs-validation" novalidate>
                         <input type="hidden" name="academicYear" th:value="${currentAcademicYear}">
                         <input type="hidden" name="semester" th:value="${student.currentSemester}">
                         
@@ -41,7 +41,7 @@
                             <p class="mb-0">Please ensure all your grades are completed before submitting this request.</p>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                        <button type="submit" class="btn btn-primary" th:disabled="${hasPendingRequest}" th:text="${hasPendingRequest} ? 'Request Pending' : 'Submit Request'"></button>
                     </form>
                 </div>
 
@@ -92,5 +92,19 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var form = document.querySelector('form[th\\:action]');
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) {
+              btn.disabled = true;
+              btn.innerText = 'Request Pending';
+            }
+          });
+        }
+      });
+    </script>
 </body>
 </html> 

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'subjects')}">
+<head>
+    <title>Create Subject</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="container mt-5">
+        <h2>Create New Subject</h2>
+        <form th:action="@{/admin/subjects/create}" th:object="${subject}" method="post">
+            <div class="mb-3">
+                <label for="code" class="form-label">Subject Code</label>
+                <input type="text" class="form-control" id="code" th:field="*{code}" required>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Subject Name</label>
+                <input type="text" class="form-control" id="name" th:field="*{name}" required>
+            </div>
+            <div class="mb-3">
+                <label for="units" class="form-label">Units</label>
+                <input type="number" class="form-control" id="units" th:field="*{units}" required>
+            </div>
+            <div class="mb-3">
+                <label for="course" class="form-label">Course</label>
+                <select class="form-select" id="course" name="courseId" required>
+                    <option value="">Select Course</option>
+                    <option th:each="c : ${courses}" th:value="${c.id}" th:text="${c.program.name + ' - Year ' + c.year + ', Sem ' + c.semester}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="program" class="form-label">Program</label>
+                <select class="form-select" id="program" name="programId" required>
+                    <option value="">Select Program</option>
+                    <option th:each="p : ${programs}" th:value="${p.id}" th:text="${p.name}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="yearLevel" class="form-label">Year Level</label>
+                <select class="form-select" id="yearLevel" name="yearLevel" required>
+                    <option value="">Select Year Level</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="semester" class="form-label">Semester</label>
+                <select class="form-select" id="semester" name="semester" required>
+                    <option value="">Select Semester</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Subject</button>
+            <a href="/admin/subjects" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+</body>
+</html> 

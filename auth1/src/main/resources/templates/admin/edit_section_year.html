@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'sections')}">
+<head>
+    <title>Edit Section Academic Year</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="header">
+        <h1>Edit Academic Year for Section <span th:text="${section.name}"></span></h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form th:action="@{/admin/sections/edit-year}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" name="sectionId" th:value="${section.id}" />
+                <input type="hidden" name="oldAcademicYear" th:value="${academicYear}" />
+
+                <div class="mb-3">
+                    <label class="form-label">Section Name</label>
+                    <input type="text" class="form-control" th:value="${section.name}" readonly />
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Current Academic Year</label>
+                    <input type="text" class="form-control" th:value="${academicYear}" readonly />
+                </div>
+
+                <div class="mb-3">
+                    <label for="newAcademicYear" class="form-label">New Academic Year</label>
+                    <input type="text" class="form-control" id="newAcademicYear" name="newAcademicYear" placeholder="e.g., 2025-2026" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Update Academic Year</button>
+                <a th:href="@{/admin/sections}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html> 

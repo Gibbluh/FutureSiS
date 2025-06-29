@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'faculty')}">
+<head>
+    <title>Add Faculty</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="container mt-5">
+        <h2>Add New Faculty</h2>
+        <form th:action="@{/admin/faculty/add}" th:object="${faculty}" method="post">
+            <div class="mb-3">
+                <label for="firstName" class="form-label">First Name</label>
+                <input type="text" class="form-control" id="firstName" th:field="*{firstName}" required>
+            </div>
+            <div class="mb-3">
+                <label for="lastName" class="form-label">Last Name</label>
+                <input type="text" class="form-control" id="lastName" th:field="*{lastName}" required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" th:field="*{email}" required>
+            </div>
+            <div class="mb-3">
+                <label for="facultyId" class="form-label">Faculty ID</label>
+                <input type="text" class="form-control" id="facultyId" th:field="*{facultyId}" required>
+            </div>
+            <div class="mb-3">
+                <label for="position" class="form-label">Position/Title</label>
+                <input type="text" class="form-control" id="position" th:field="*{position}" required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <div class="mb-3">
+                <label for="programIds" class="form-label">Programs</label>
+                <select class="form-select" id="programIds" name="programIds" multiple required>
+                    <option th:each="p : ${programs}" th:value="${p.id}" th:text="${p.name}"></option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Faculty</button>
+            <a href="/admin/faculty" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+</body>
+</html> 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'subjects')}">
+<head>
+    <title>Edit Subject</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="container mt-5">
+        <h2>Edit Subject</h2>
+        <form th:action="@{/admin/subjects/{id}/edit(id=${subject.id})}" th:object="${subject}" method="post">
+            <div class="mb-3">
+                <label for="code" class="form-label">Subject Code</label>
+                <input type="text" class="form-control" id="code" th:field="*{code}" required>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Subject Name</label>
+                <input type="text" class="form-control" id="name" th:field="*{name}" required>
+            </div>
+            <div class="mb-3">
+                <label for="units" class="form-label">Units</label>
+                <input type="number" class="form-control" id="units" th:field="*{units}" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Program</label>
+                <input type="text" class="form-control" th:value="${subject.course.program.name}" disabled>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="year" class="form-label">Year Level</label>
+                    <select class="form-select" id="year" name="year" required>
+                        <option th:each="y : ${#numbers.sequence(1, 5)}" th:value="${y}" th:text="${'Year ' + y}" th:selected="${y == subject.course.year}"></option>
+                    </select>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="semester" class="form-label">Semester</label>
+                    <select class="form-select" id="semester" name="semester" required>
+                        <option value="1" th:selected="${subject.course.semester == 1}">1st Semester</option>
+                        <option value="2" th:selected="${subject.course.semester == 2}">2nd Semester</option>
+                        <option value="3" th:selected="${subject.course.semester == 3}">Summer</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Subject</button>
+            <a href="/admin/subjects" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+</body>
+</html> 

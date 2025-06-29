@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{admin/layout :: layout(~{::content}, 'Pending Graduation Requests', 'graduation-requests')}">
+<head>
+    <title>Pending Graduation Requests</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-graduation-cap text-primary me-2"></i>
+                    Pending Graduation Requests
+                </h2>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <!-- Modern Filter Bar -->
+                    <div class="card mb-3 shadow-sm border-0" style="background: #f8f9fa;">
+                        <div class="card-body py-3 px-4">
+                            <form method="get" th:action="@{/graduation/admin/pending}" id="filterForm" class="row g-2 align-items-center mb-0">
+                                <div class="col-md-3">
+                                    <label for="filterProgram" class="form-label mb-1"><i class="fas fa-graduation-cap"></i> Program</label>
+                                    <select id="filterProgram" name="programId" class="form-select form-select-sm">
+                                        <option value="">All Programs</option>
+                                        <option th:each="program : ${programs}"
+                                                th:value="${program.id}"
+                                                th:selected="${program.id} == ${selectedProgramId}"
+                                                th:text="${program.name}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="filterYearLevel" class="form-label mb-1"><i class="fas fa-layer-group"></i> Year Level</label>
+                                    <select id="filterYearLevel" name="yearLevel" class="form-select form-select-sm">
+                                        <option value="">All Year Levels</option>
+                                        <option th:each="level : ${yearLevels}"
+                                                th:value="${level}"
+                                                th:selected="${level} == ${selectedYearLevel}"
+                                                th:text="${level} + ' Year'"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filterSection" class="form-label mb-1"><i class="fas fa-users"></i> Section</label>
+                                    <select id="filterSection" name="sectionId" class="form-select form-select-sm">
+                                        <option value="">All Sections</option>
+                                        <option th:each="section : ${sections}"
+                                                th:value="${section.id}"
+                                                th:selected="${section.id} == ${selectedSectionId}"
+                                                th:text="${section.name}"></option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="filterAcademicYear" class="form-label mb-1"><i class="fas fa-calendar-alt"></i> Academic Year</label>
+                                    <select id="filterAcademicYear" name="academicYear" class="form-select form-select-sm">
+                                        <option value="">All Academic Years</option>
+                                        <option th:each="ay : ${academicYears}"
+                                                th:value="${ay}"
+                                                th:selected="${ay} == ${selectedAcademicYear}"
+                                                th:text="${ay}"></option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <script>
+                        document.querySelectorAll('#filterForm select').forEach(function(select) {
+                            select.addEventListener('change', function() {
+                                document.getElementById('filterForm').submit();
+                            });
+                        });
+                    </script>
+
+                    <div th:if="${#lists.isEmpty(pendingRequests)}" class="text-center py-5">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Pending Graduation Requests</h4>
+                        <p class="text-muted">All graduation requests have been processed.</p>
+                    </div>
+
+                    <div th:if="${!#lists.isEmpty(pendingRequests)}" class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Student Number</th>
+                                    <th>Student Name</th>
+                                    <th>Program</th>
+                                    <th>Year Level</th>
+                                    <th>Section</th>
+                                    <th>Academic Year</th>
+                                    <th>Request Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="request : ${pendingRequests}">
+                                    <td th:text="${request.student.studentNumber}">2021-00001</td>
+                                    <td th:text="${request.student.firstName + ' ' + request.student.lastName}">John Doe</td>
+                                    <td th:text="${request.student.program.name}">BSIT</td>
+                                    <td th:text="${request.student.enrollmentYear}">4</td>
+                                    <td th:text="${request.student.section.name}">BSIT-4-A</td>
+                                    <td th:text="${request.student.academicYear}">2024-2025</td>
+                                    <td th:text="${#temporals.format(request.requestDate, 'MMM dd, yyyy HH:mm')}">Jan 01, 2024 10:00</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-success btn-sm" 
+                                                    th:onclick="'approveGraduation(' + ${request.id} + ')'">
+                                                <i class="fas fa-check me-1"></i> Approve
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    th:onclick="'rejectGraduation(' + ${request.id} + ')'">
+                                                <i class="fas fa-times me-1"></i> Reject
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval Modal -->
+        <div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="approvalModalLabel">Process Graduation Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="approvalForm">
+                            <input type="hidden" id="requestId" name="requestId">
+                            <input type="hidden" id="approvalAction" name="approved">
+                            
+                            <div class="mb-3">
+                                <label for="comments" class="form-label">Comments (Optional)</label>
+                                <textarea class="form-control" id="comments" name="comments" rows="3" 
+                                          placeholder="Enter any comments about this graduation request..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirmApproval">Confirm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Toast -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-success text-white">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="toastMessage">
+                    Graduation request processed successfully.
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Toast -->
+        <div class="toast-container position-fixed bottom-0 end-0 p-3">
+            <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-danger text-white">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    <strong class="me-auto">Error</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body" id="errorToastMessage">
+                    An error occurred while processing the request.
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            function approveGraduation(requestId) {
+                document.getElementById('requestId').value = requestId;
+                document.getElementById('approvalAction').value = 'true';
+                document.getElementById('approvalModalLabel').textContent = 'Approve Graduation Request';
+                document.getElementById('confirmApproval').className = 'btn btn-success';
+                document.getElementById('confirmApproval').innerHTML = '<i class="fas fa-check me-1"></i> Approve';
+                new bootstrap.Modal(document.getElementById('approvalModal')).show();
+            }
+
+            function rejectGraduation(requestId) {
+                document.getElementById('requestId').value = requestId;
+                document.getElementById('approvalAction').value = 'false';
+                document.getElementById('approvalModalLabel').textContent = 'Reject Graduation Request';
+                document.getElementById('confirmApproval').className = 'btn btn-danger';
+                document.getElementById('confirmApproval').innerHTML = '<i class="fas fa-times me-1"></i> Reject';
+                new bootstrap.Modal(document.getElementById('approvalModal')).show();
+            }
+
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('confirmApproval').addEventListener('click', function() {
+                    const formData = {
+                        requestId: document.getElementById('requestId').value,
+                        approved: document.getElementById('approvalAction').value === 'true',
+                        comments: document.getElementById('comments').value
+                    };
+
+                    fetch('/graduation/admin/process', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]').getAttribute('content')
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('toastMessage').textContent = data.success;
+                            new bootstrap.Toast(document.getElementById('successToast')).show();
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1500);
+                        } else {
+                            document.getElementById('errorToastMessage').textContent = data.error;
+                            new bootstrap.Toast(document.getElementById('errorToast')).show();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        document.getElementById('errorToastMessage').textContent = 'An error occurred while processing the request.';
+                        new bootstrap.Toast(document.getElementById('errorToast')).show();
+                    });
+
+                    bootstrap.Modal.getInstance(document.getElementById('approvalModal')).hide();
+                });
+            });
+        </script>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'subject-sections')}">
+<head>
+    <title>Subject Sections Management</title>
+    <style>
+    .table th, .table td {
+        vertical-align: middle !important;
+        text-align: left;
+        padding: 12px 10px;
+    }
+    .table th {
+        background: #222e3c;
+        color: #fff;
+        font-weight: 600;
+    }
+    .table-bordered {
+        border: 1px solid #dee2e6;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f1f3f6;
+    }
+    </style>
+</head>
+<body>
+<div th:fragment="content">
+        <!-- Header -->
+        <div class="row bg-white text-black p-3 mb-3 rounded border align-items-center">
+            <div class="col">
+                <h2 class="d-flex align-items-center" style="color: #111;"><i class="fas fa-layer-group me-2" style="color: #111;"></i> Subject Sections Management</h2>
+                <p class="mb-0" style="color: #333;">Manage subject sections and faculty assignments</p>
+            </div>
+            <div class="col-auto">
+                <a th:href="@{/admin/subject-sections/create}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Create New Subject Section
+                </a>
+            </div>
+        </div>
+        <!-- Success/Error Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <!-- Filter Form -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-filter"></i> Filter Subject Sections</h5>
+                <form id="filter-form" class="filter-form">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="subject-filter" class="form-label">Subject (Code or Name)</label>
+                            <input type="text" class="form-control" id="subject-filter" placeholder="e.g., CO483 or OOP">
+                        </div>
+                        <div class="col-md-2">
+                             <label for="section-filter" class="form-label">Section</label>
+                             <input type="text" class="form-control" id="section-filter" placeholder="e.g., A">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="year-filter" class="form-label">Academic Year</label>
+                            <input type="text" class="form-control" id="year-filter" placeholder="e.g., 2024-2025">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="faculty-filter" class="form-label">Faculty</label>
+                            <input type="text" class="form-control" id="faculty-filter" placeholder="e.g., Wilson">
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-secondary" id="reset-filters">Reset</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Subject Sections Table -->
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-list"></i> Subject Sections</h5>
+                <div th:if="${#lists.isEmpty(subjectSections)}" class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No subject sections found for the selected criteria.
+                </div>
+                <div th:if="${!#lists.isEmpty(subjectSections)}" class="table-responsive">
+                    <table class="table table-hover table-bordered align-middle" style="min-width: 1100px;">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 180px;">Subject Code</th>
+                                <th style="width: 180px;">Subject Name</th>
+                                <th style="width: 100px;">Section</th>
+                                <th style="width: 120px;">Schedule</th>
+                                <th style="width: 90px;">Room</th>
+                                <th style="width: 110px;">Max Students</th>
+                                <th style="width: 120px;">Academic Year</th>
+                                <th style="width: 160px;">Faculty</th>
+                                <th style="width: 120px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subject-sections-table-body">
+                            <tr th:each="ss : ${subjectSections}">
+                                <td th:text="${ss.subjectCode}"></td>
+                                <td th:text="${ss.subjectName}"></td>
+                                <td th:text="${ss.sectionName}"></td>
+                                <td th:text="${ss.schedule}"></td>
+                                <td th:text="${ss.room}"></td>
+                                <td th:text="${ss.maxStudents}"></td>
+                                <td th:text="${ss.academicYear}"></td>
+                                <td th:text="${ss.facultyName != null && !#strings.isEmpty(ss.facultyName) ? ss.facultyName : 'No faculty assigned'}"></td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a th:href="@{|/admin/subject-sections/${ss.id}/assign-faculty|}" class="btn btn-primary btn-sm" title="Assign Faculty"><i class="fas fa-user-plus"></i></a>
+                                        <a th:href="@{|/admin/subject-sections/${ss.id}/edit|}" class="btn btn-warning btn-sm" title="Edit"><i class="fas fa-edit"></i></a>
+                                        <form th:action="@{|/admin/subject-sections/${ss.id}/delete|}" method="post" style="display:inline;">
+                                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                            <button type="submit" class="btn btn-danger btn-sm" title="Delete"><i class="fas fa-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    <!-- Bootstrap JS and filter script remain unchanged -->
+    </div>
+</body>
+</html> 

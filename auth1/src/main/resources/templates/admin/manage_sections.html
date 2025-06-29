@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'sections')}">
+<head>
+    <title>Manage Sections</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="container-fluid mt-4">
+        <div class="row align-items-center mb-3">
+        <div class="col">
+                <h3 class="mb-0"><i class="fas fa-cubes"></i> Manage Sections</h3>
+        </div>
+        <div class="col-auto">
+                <a th:href="@{/admin/sections/create}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Add New Section
+            </a>
+        </div>
+    </div>
+
+        <!-- Filter Section -->
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title"><i class="fas fa-filter"></i> Filter Sections</h5>
+            <form id="filter-form" class="filter-form">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="program-filter" class="form-label">Program Name</label>
+                        <input type="text" class="form-control" id="program-filter" placeholder="Type to filter by program...">
+                    </div>
+                    <div class="col-md-4">
+                         <label for="year-filter" class="form-label">Academic Year</label>
+                         <input type="text" class="form-control" id="year-filter" placeholder="Type to filter by year...">
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-secondary" id="reset-filters">Reset</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <!-- Sections Table -->
+    <div class="card mt-3">
+        <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-list"></i> All Sections</h5>
+            <div class="table-responsive">
+                    <table class="table table-hover" id="sections-table">
+                        <thead class="table-light">
+                        <tr>
+                                <th>Section Name</th>
+                            <th>Program</th>
+                            <th>Academic Year</th>
+                                <th>No. of Students</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                        <tr th:each="data : ${sectionsData}"
+                                th:attr="data-program-name=${data.programName}, data-academic-year=${data.academicYear}">
+                                <td th:text="${data.name}"></td>
+                                <td th:text="${data.programName}"></td>
+                                <td th:text="${data.academicYear}"></td>
+                            <td>
+                                    <a th:href="@{/admin/sections/{id}/students(id=${data.id}, academicYear=${data.academicYear})}">
+                                        <span th:text="${data.studentCount}"></span>
+                                    </a>
+                                </td>
+                                <td>
+                                    <a th:href="@{/admin/sections/edit-year(id=${data.id}, academicYear=${data.academicYear})}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-calendar-alt"></i> Edit Year
+                                </a>
+                                    <a th:href="@{/admin/sections/{id}/edit(id=${data.id})}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i> Edit Section
+                                    </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const programFilter = document.getElementById('program-filter');
+        const yearFilter = document.getElementById('year-filter');
+        const resetFiltersBtn = document.getElementById('reset-filters');
+        const tableRows = document.querySelectorAll('#sections-table tbody tr');
+
+        function filterTable() {
+            const programText = programFilter.value.toLowerCase();
+            const yearText = yearFilter.value.toLowerCase();
+
+            tableRows.forEach(row => {
+                const programName = row.getAttribute('data-program-name').toLowerCase();
+                const academicYear = row.getAttribute('data-academic-year').toLowerCase();
+
+                const programMatch = programName.includes(programText);
+                const yearMatch = academicYear.includes(yearText);
+
+                if (programMatch && yearMatch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        programFilter.addEventListener('keyup', filterTable);
+        yearFilter.addEventListener('keyup', filterTable);
+
+        resetFiltersBtn.addEventListener('click', function() {
+                programFilter.value = '';
+                yearFilter.value = '';
+            filterTable();
+            });
+    });
+    </script>
+</div>
+</body>
+</html> 

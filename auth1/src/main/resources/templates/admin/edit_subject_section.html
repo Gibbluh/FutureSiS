@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'subject-sections')}">
+<head>
+    <title>Edit Subject Section</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row bg-white text-black p-3 mb-3 rounded border align-items-center">
+        <div class="col">
+            <h2 class="d-flex align-items-center" style="color: #111;"><i class="fas fa-layer-group me-2" style="color: #111;"></i> Edit Subject Section</h2>
+        </div>
+        <div class="col-auto">
+            <a th:href="@{/admin/subject-sections}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </div>
+    <div class="container mt-4">
+        <form th:action="@{/admin/subject-sections/edit/{id}(id=${subjectSection.id})}" th:object="${subjectSection}" method="post">
+            <div class="mb-3">
+                <label for="subject" class="form-label">Subject</label>
+                <select class="form-select" id="subject" th:field="*{subject}" required>
+                    <option th:each="s : ${subjects}" th:value="${s.id}" th:text="${s.name}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="section" class="form-label">Section</label>
+                <select class="form-select" id="section" th:field="*{section}" required>
+                    <option th:each="sec : ${sections}" th:value="${sec.id}" th:text="${sec.name}"></option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="semester" class="form-label">Semester</label>
+                <select id="semester" th:field="*{semester}" class="form-control" required>
+                    <option value="">-- Select Semester --</option>
+                    <option value="1">1st Semester</option>
+                    <option value="2">2nd Semester</option>
+                </select>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('semester')}" th:errors="*{semester}"></div>
+            </div>
+            <div class="mb-3">
+                <label for="academicYear" class="form-label">Academic Year</label>
+                <input type="text" class="form-control" id="academicYear" th:field="*{academicYear}" placeholder="e.g., 2024-2025">
+            </div>
+            <div class="mb-3">
+                <label for="schedule" class="form-label">Schedule</label>
+                <input type="text" class="form-control" id="schedule" th:field="*{schedule}">
+            </div>
+            <div class="mb-3">
+                <label for="room" class="form-label">Room</label>
+                <input type="text" class="form-control" id="room" th:field="*{room}">
+            </div>
+            <div class="mb-3">
+                <label for="maxStudents" class="form-label">Max Students</label>
+                <input type="number" class="form-control" id="maxStudents" th:field="*{maxStudents}">
+            </div>
+            <div class="mb-3">
+                <label for="faculty" class="form-label">Faculty</label>
+                <select class="form-select" id="faculty" name="facultyId">
+                    <option value="">-- Unassigned --</option>
+                    <option th:each="f : ${faculties}" 
+                            th:value="${f.id}" 
+                            th:text="${f.firstName + ' ' + f.lastName}"
+                            th:selected="${assignedFacultyId != null && assignedFacultyId == f.id}"></option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Subject Section</button>
+        </form>
+    </div>
+</div>
+</body>
+</html> 

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'students')}">
+<head>
+    <title>Graduated Students</title>
+    <style>
+    .table th, .table td {
+        vertical-align: middle !important;
+        text-align: left;
+        padding: 12px 10px;
+    }
+    .table th {
+        background: #222e3c;
+        color: #fff;
+        font-weight: 600;
+    }
+    .table-bordered {
+        border: 1px solid #dee2e6;
+    }
+    .table-hover tbody tr:hover {
+        background-color: #f1f3f6;
+    }
+    .action-buttons a, .action-buttons button {
+        margin-right: 4px;
+        margin-bottom: 2px;
+    }
+    </style>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row bg-white text-black p-3 mb-3 rounded border align-items-center">
+        <div class="col">
+            <h2 class="d-flex align-items-center" style="color: #111;"><i class="fas fa-graduation-cap me-2" style="color: #111;"></i> Graduated Students</h2>
+        </div>
+        <div class="col-auto">
+            <a href="/admin/students" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Student List
+            </a>
+        </div>
+    </div>
+    <div id="studentTable" th:if="${students != null and !students.empty}">
+        <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle" style="min-width: 1100px;">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 50px;">ID</th>
+                    <th style="width: 160px;">Student Number</th>
+                    <th style="width: 120px;">First Name</th>
+                    <th style="width: 120px;">Last Name</th>
+                    <th style="width: 220px;">Email</th>
+                    <th style="width: 220px;">Program</th>
+                    <th style="width: 70px;">Year</th>
+                    <th style="width: 120px;">Enrollment Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="student : ${students}">
+                    <td th:text="${student.id}"></td>
+                    <td th:text="${student.studentNumber}"></td>
+                    <td th:text="${student.firstName}"></td>
+                    <td th:text="${student.lastName}"></td>
+                    <td th:text="${student.email}"></td>
+                    <td th:text="${student.program != null ? student.program.name : 'Not Assigned'}"></td>
+                    <td th:text="${student.enrollmentYear}"></td>
+                    <td th:text="${#temporals.format(student.enrollmentDate, 'yyyy-MM-dd')}"></td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+    <div th:if="${students == null or students.empty}" class="message">
+        No graduated students found.
+    </div>
+</div>
+</body>
+</html> 

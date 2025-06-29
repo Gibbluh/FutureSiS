@@ -1,213 +1,200 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'students')}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Grades</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .grade-card {
-            transition: all 0.3s ease;
-        }
-        .grade-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .grade-input {
-            max-width: 100px;
-        }
-        .grade-display {
-            font-size: 0.9rem;
-            color: #666;
-        }
-        .grade-help {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-        .grade-scale {
-            font-size: 0.8rem;
-            color: #666;
-            margin-top: 0.5rem;
-            padding: 0.5rem;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-        .filters-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 8px;
-        }
-        .filter-row {
-            display: flex;
-            gap: 20px;
-            align-items: flex-end;
-        }
-        .filter-group {
-            flex: 1;
-        }
-    </style>
 </head>
 <body>
-    <div class="container py-4">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white">
-                <h2 class="h4 mb-0">
-                    Student Grades - <span th:text="${student != null ? student.firstName + ' ' + student.lastName : 'Unknown Student'}"></span>
-                </h2>
-                <p class="mb-0" th:if="${student != null and student.program != null}">
-                    <span th:text="${student.program.name}"></span> - 
-                    Year Level <span th:text="${student.enrollmentYear}"></span>
-                </p>
-                <p class="mb-0">
-                    Academic Year: <span th:text="${academicYear}"></span>,
-                    Semester: <span th:text="${semester}"></span>
-                </p>
+<div th:fragment="content">
+    <div class="header">
+        <h1>Grades for <span th:text="${student.firstName + ' ' + student.lastName}"></span></h1>
+        <p>Student Number: <strong th:text="${student.studentNumber}"></strong></p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div th:if="${successMessage}" class="alert alert-success" role="alert" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Grade Report</h5>
+            <div th:if="${grades.isEmpty()}">
+                <p class="text-muted">No grades have been recorded for this student yet.</p>
             </div>
-            
-            <div class="card-body">
-                <!-- Success/Error Messages -->
-                <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-                <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
-                <div th:if="${warningMessage}" class="alert alert-warning" th:text="${warningMessage}"></div>
+            <table class="table table-hover" th:unless="${grades.isEmpty()}">
+                <thead>
+                    <tr>
+                        <th>Subject Code</th>
+                        <th>Subject Name</th>
+                        <th>Section</th>
+                        <th>Academic Year</th>
+                        <th>Semester</th>
+                        <th>Grade</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="grade : ${grades}">
+                        <td th:text="${grade.subjectSection.subject.code}"></td>
+                        <td th:text="${grade.subjectSection.subject.name}"></td>
+                        <td th:text="${grade.subjectSection.section.name}"></td>
+                        <td th:text="${grade.subjectSection.academicYear}"></td>
+                        <td th:text="${grade.subjectSection.semester == 1 ? '1st' : '2nd'}"></td>
+                        <td th:text="${grade.rawGrade != null ? #numbers.formatDecimal(grade.rawGrade, 1, 2) : 'Not Graded'}"></td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-primary edit-grade-btn"
+                                    th:attr="data-grade-id=${grade.id},
+                                             data-subject-section-id=${grade.subjectSection.id},
+                                             data-current-grade=${grade.rawGrade},
+                                             data-student-id=${student.id}"
+                                    data-bs-toggle="modal" data-bs-target="#editGradeModal">
+                                Edit
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="mt-3">
+        <a th:href="@{/admin/students}" class="btn btn-secondary">Back to Student List</a>
+    </div>
 
-                <!-- Program Warning -->
-                <div th:if="${student == null or student.program == null}" class="alert alert-warning">
-                    Student must be assigned to a program to view grades.
+    <!-- Hidden data transport -->
+    <div id="grade-data-container"
+         th:data-faculty-map-json="${assignedFacultyMapJson}"
+         style="display: none;"></div>
+
+    <!-- Edit Grade Modal -->
+    <div class="modal fade" id="editGradeModal" tabindex="-1" aria-labelledby="editGradeModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editGradeModalLabel">Edit Grade</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+                <div class="modal-body">
+                    <form id="editGradeForm">
+                        <input type="hidden" id="modalGradeId" name="gradeId">
+                        <input type="hidden" id="modalStudentId" name="studentId">
+                        <input type="hidden" id="modalSubjectSectionId" name="subjectSectionId">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-                <!-- Filters Section -->
-                <div class="filters-section">
-                    <div class="filter-row">
-                        <div class="filter-group">
-                            <label for="facultyFilter" class="form-label">Filter Faculty by Program:</label>
-                            <select id="facultyFilter" class="form-select">
-                                <option value="all">All Faculty</option>
-                                <option th:each="program : ${student.program}"
-                                        th:value="${program.id}"
-                                        th:text="${program.name}">
-                                </option>
-                            </select>
+                        <div class="mb-3">
+                             <label for="modalFacultyId" class="form-label">Assign Faculty</label>
+                             <select id="modalFacultyId" name="facultyId" class="form-select">
+                                 <option value="">-- Unassigned --</option>
+                                 <option th:each="faculty : ${faculties}"
+                                         th:value="${faculty.id}"
+                                         th:text="${faculty.firstName + ' ' + faculty.lastName}"></option>
+                             </select>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Subjects and Grades -->
-                <div class="row" th:if="${subjects != null}">
-                    <div th:each="subject : ${subjects}" class="col-md-6 mb-3">
-                        <div class="card grade-card">
-                            <div class="card-body">
-                                <h5 class="card-title" th:text="${subject.code + ' - ' + subject.name}"></h5>
-                                <p class="card-text">
-                                    <span class="badge bg-secondary" th:text="${subject.units + ' units'}"></span>
-                                </p>
-                                
-                                <!-- Existing Grade Display -->
-                                <div class="grade-display mb-2" 
-                                     th:with="existingGrade=${grades != null and not #lists.isEmpty(grades) ? grades.?[subject.id == __${subject.id}__].size() > 0 ? grades.?[subject.id == __${subject.id}__].get(0) : null : null}">
-                                    <div th:if="${existingGrade != null}">
-                                        <strong>Current Grade:</strong>
-                                        Raw: <span th:text="${#numbers.formatDecimal(existingGrade.rawGrade, 1, 2)}"></span>% |
-                                        GWA: <span th:text="${#numbers.formatDecimal(existingGrade.gwa, 1, 2)}"></span> |
-                                        Letter: <span th:text="${existingGrade.letterGrade}"></span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Grade Input Form -->
-                                <form th:action="@{/admin/students/{id}/grades/save(id=${student.id})}" 
-                                      method="post" class="mt-3">
-                                    
-                                    <input type="hidden" name="academicYear" th:value="${academicYear}">
-                                    <input type="hidden" name="semester" th:value="${semester}">
-                                    <input type="hidden" name="subjectId" th:value="${subject.id}">
-                                    
-                                    <div class="mb-3">
-                                        <label for="facultyId" class="form-label">Assign Faculty</label>
-                                        <select class="form-select faculty-select" name="facultyId" data-program-id="${subject.course != null ? subject.course.program.id : ''}">
-                                            <option value="">Select Faculty</option>
-                                            <option th:each="faculty : ${faculties}"
-                                                    th:value="${faculty.facultyId}"
-                                                    th:text="${faculty.lastName + ', ' + faculty.firstName}"
-                                                    th:attr="data-programs=${faculty.facultyPrograms.![program.id]}">
-                                            </option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="input-group">
-                                        <span class="input-group-text">Raw %</span>
-                                        <input type="number" 
-                                               class="form-control grade-input" 
-                                               name="grade"
-                                               th:with="existingGrade=${grades != null and not #lists.isEmpty(grades) ? grades.?[subject.id == __${subject.id}__].size() > 0 ? grades.?[subject.id == __${subject.id}__].![rawGrade].get(0) : null : null}"
-                                               th:value="${existingGrade}"
-                                               step="0.01" 
-                                               min="0" 
-                                               max="100" 
-                                               placeholder="e.g. 95"
-                                               required>
-                                        <button type="submit" class="btn btn-primary">Save</button>
-                                    </div>
-                                    <small class="form-text text-muted">Enter raw percentage grade (0-100)</small>
-
-                                    <div class="grade-scale mt-2">
-                                        <strong>Philippine Grading Scale:</strong><br>
-                                        1.0 = 97-100% (Excellent)<br>
-                                        1.25 = 94-96%<br>
-                                        1.5 = 91-93%<br>
-                                        1.75 = 88-90%<br>
-                                        2.0 = 85-87%<br>
-                                        2.25 = 82-84%<br>
-                                        2.5 = 79-81%<br>
-                                        2.75 = 76-78%<br>
-                                        3.0 = 75%<br>
-                                        5.0 = Below 75 (Failed)
-                                    </div>
-                                </form>
-                            </div>
+                        <div class="mb-3">
+                            <label for="modalRawGrade" class="form-label">Percentage Grade (0-100)</label>
+                            <input type="number" id="modalRawGrade" name="rawGrade" class="form-control" step="0.01" min="0" max="100" placeholder="Leave blank for 'Not Graded'">
                         </div>
-                    </div>
+                    </form>
                 </div>
-
-                <!-- Empty State -->
-                <div th:if="${subjects == null or #lists.isEmpty(subjects)}" class="alert alert-info">
-                    No subjects found for this semester.
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveGradeChanges">Save changes</button>
                 </div>
-
-                <!-- Back Button -->
-                <a th:href="@{/admin/home}" class="btn btn-secondary mt-3">
-                    ← Back to Student List
-                </a>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const facultyFilter = document.getElementById('facultyFilter');
-            const facultySelects = document.querySelectorAll('.faculty-select');
-            
-            facultyFilter.addEventListener('change', function() {
-                const selectedProgramId = this.value;
-                
-                facultySelects.forEach(select => {
-                    const options = select.querySelectorAll('option');
-                    options.forEach(option => {
-                        if (option.value === '') { // Skip the placeholder option
-                            return;
+    <script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log("Student grades script loaded. If you see this, the script is in the right place.");
+
+        const dataContainer = document.getElementById('grade-data-container');
+        if (!dataContainer) {
+            console.error("Critical error: The grade-data-container element is missing from the page.");
+            return;
+        }
+
+        const assignedFacultyMap = JSON.parse(dataContainer.getAttribute('data-faculty-map-json') || '{}');
+        const editGradeModal = document.getElementById('editGradeModal');
+        
+        if (editGradeModal) {
+            editGradeModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const gradeId = button.getAttribute('data-grade-id');
+                const subjectSectionId = button.getAttribute('data-subject-section-id');
+                const currentGrade = button.getAttribute('data-current-grade');
+                const studentId = button.getAttribute('data-student-id');
+
+                document.getElementById('modalGradeId').value = gradeId;
+                document.getElementById('modalStudentId').value = studentId;
+                document.getElementById('modalSubjectSectionId').value = subjectSectionId;
+                document.getElementById('modalRawGrade').value = currentGrade || "";
+
+                const facultyDropdown = document.getElementById('modalFacultyId');
+                const assignedFacultyId = assignedFacultyMap[subjectSectionId];
+                facultyDropdown.value = assignedFacultyId ? assignedFacultyId : '';
+            });
+
+            const saveButton = document.getElementById('saveGradeChanges');
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    console.log("Save button clicked. Preparing to send data.");
+                    const form = document.getElementById('editGradeForm');
+                    const formData = new FormData(form);
+                    const gradeId = formData.get('gradeId');
+
+                    const params = new URLSearchParams();
+                    params.append('subjectSectionId', formData.get('subjectSectionId'));
+
+                    const facultyIdValue = formData.get('facultyId');
+                    if (facultyIdValue && facultyIdValue.trim() !== '') {
+                        params.append('facultyId', facultyIdValue);
+                    }
+
+                    const rawGradeValue = formData.get('rawGrade');
+                    if (rawGradeValue && rawGradeValue.trim() !== '') {
+                        params.append('rawGrade', rawGradeValue);
+                    }
+
+                    fetch(`/admin/grades/update/${gradeId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': formData.get('_csrf')
+                        },
+                        body: params
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error('Server responded with an error:', response);
+                            return response.text().then(text => { 
+                                throw new Error(`Server error: ${response.status} ${response.statusText}. \nDetails: ${text}`);
+                            });
                         }
-                        
-                        const programIds = option.getAttribute('data-programs');
-                        if (selectedProgramId === 'all' || (programIds && programIds.includes(selectedProgramId))) {
-                            option.style.display = '';
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert('Grade saved successfully!');
+                            location.reload();
                         } else {
-                            option.style.display = 'none';
+                            alert('Error updating grade: ' + (data.error || 'An unknown server error occurred.'));
                         }
+                    })
+                    .catch(error => {
+                        console.error('An error occurred during the save operation:', error);
+                        alert('A critical error occurred while trying to save the grade. Please check the browser console for details.');
                     });
                 });
-            });
-        });
+            } else {
+                console.error("Critical error: The 'saveGradeChanges' button was not found.");
+            }
+        } else {
+            console.error("Critical error: The 'editGradeModal' element was not found.");
+        }
+    });
+    /*]]>*/
     </script>
+</div>
 </body>
-</html> 
+</html>

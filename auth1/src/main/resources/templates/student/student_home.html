@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Student Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background: #f7f7f7;
+            background: linear-gradient(135deg, #23395d 0%, #406e8e 50%, #2e8bc0 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
             margin: 0;
             padding: 0;
@@ -14,9 +19,12 @@
             max-width: 1200px;
             margin: 32px auto;
             padding: 24px;
+            background: linear-gradient(135deg, rgba(250,253,255,0.85) 0%, rgba(224,236,255,0.85) 100%);
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
         }
         .header {
-            background: #fff;
+            background: linear-gradient(135deg, rgba(250,253,255,0.92) 0%, rgba(224,236,255,0.92) 100%);
             padding: 20px 32px;
             border-radius: 16px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.08);
@@ -50,7 +58,7 @@
             background-color: #b71c1c;
         }
         .dashboard-card {
-            background: #fff;
+            background: linear-gradient(135deg, rgba(250,253,255,0.92) 0%, rgba(224,236,255,0.92) 100%);
             padding: 32px 32px 24px 32px;
             border-radius: 16px;
             box-shadow: 0 4px 24px rgba(0,0,0,0.08);
@@ -100,11 +108,86 @@
         .grade-na {
             color: #757575;
         }
+        .btn-primary {
+            background: linear-gradient(90deg, #2196f3 0%, #21cbf3 100%);
+            color: #fff;
+            padding: 10px 22px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #21cbf3 100%);
+            box-shadow: 0 4px 16px rgba(33,150,243,0.25);
+        }
+        .btn-disabled {
+            background: #e0e0e0 !important;
+            color: #9e9e9e !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+        }
+        .btn-disabled:hover {
+            background: #e0e0e0 !important;
+            box-shadow: none !important;
+        }
+        .form-group .input-wrapper {
+            position: relative;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .password-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding-right: 40px !important;
+        }
+        .rejected-warning-icon {
+            display: inline-block;
+            margin-left: 8px;
+            cursor: pointer;
+            position: relative;
+        }
+        .rejected-warning-icon .fa-exclamation-circle {
+            color: #d32f2f;
+            font-size: 1.7rem;
+            vertical-align: middle;
+        }
+        .rejected-tooltip {
+            display: none;
+            position: absolute;
+            top: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+            border-radius: 6px;
+            padding: 10px 16px;
+            font-size: 1rem;
+            min-width: 260px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            white-space: normal;
+        }
+        .rejected-warning-icon:hover .rejected-tooltip,
+        .rejected-warning-icon:focus .rejected-tooltip {
+            display: block;
+        }
     </style>
     <meta name="_csrf" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 </head>
 <body>
+    <div th:if="${isGraduated}" style="position:fixed; top:30px; left:30px; z-index:1000;">
+        <img src="/img/pepo-party-celebrate.gif" alt="Congratulations!" style="height:350px; width:auto; pointer-events:none; user-select:none;">
+    </div>
     <div class="dashboard-container">
         <div class="header">
             <div>
@@ -144,12 +227,18 @@
                     </span>
                     &nbsp;|&nbsp;
                     <span><b>Academic Year:</b>
-                        <span th:if="${currentAcademicYear != null}" th:text="${currentAcademicYear}"></span>
-                        <span th:if="${currentAcademicYear == null}">N/A</span>
+                        <span th:if="${latestApprovedAcademicYear != null ? latestApprovedAcademicYear : student.academicYear != null}" th:text="${latestApprovedAcademicYear != null ? latestApprovedAcademicYear : student.academicYear}"></span>
+                        <span th:if="${latestApprovedAcademicYear == null && student.academicYear == null}">N/A</span>
+                    </span>
+                    &nbsp;|&nbsp;
+                    <span><b>Section:</b>
+                        <span th:if="${student != null && student.section != null}" th:text="${student.section.name}"></span>
+                        <span th:if="${student == null || student.section == null}">N/A</span>
                     </span>
                 </div>
             </div>
             <div style="display: flex; gap: 10px;">
+                <button type="button" id="changePasswordBtn" class="btn-primary" style="background: #ff9800;">Change Password</button>
                 <form th:action="@{/student/logout}" method="post" style="margin: 0;">
                     <button type="submit" class="logout-btn">Logout</button>
                 </form>
@@ -162,7 +251,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <span>My Current Courses & Grades</span>
                     <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 8px;">
-                        <button id="viewSubjectsBtn" class="btn-primary" style="margin-right: 16px;">View Subjects by Year/Semester</button>
+                        <button id="viewSubjectsGradesBtn" class="btn-primary" style="margin-right: 16px;">
+                            <span style="font-size:1.2em;">📚</span>
+                            View Subjects & Grades by Year/Semester
+                        </button>
                         <span style="color: #4CAF50; font-weight: bold;">GWA: <span th:text="${gwa}"></span></span>
                     </div>
                 </div>
@@ -175,8 +267,8 @@
                         </span>
                     </span>
                     <span th:if="${student == null}">N/A</span>,
-                    <span th:if="${currentAcademicYear != null}" th:text="${currentAcademicYear}"></span>
-                    <span th:if="${currentAcademicYear == null}">N/A</span>
+                    <span th:if="${latestApprovedAcademicYear != null ? latestApprovedAcademicYear : student.academicYear != null}" th:text="${latestApprovedAcademicYear != null ? latestApprovedAcademicYear : student.academicYear}"></span>
+                    <span th:if="${latestApprovedAcademicYear == null && student.academicYear == null}">N/A</span>
                 </div>
             </div>
             <table class="elongated-table">
@@ -188,6 +280,8 @@
                         <th>Instructor</th>
                         <th>Units</th>
                         <th>Section</th>
+                        <th>Room</th>
+                        <th>Schedule</th>
                         <th>Grade</th>
                         <th>Letter Grade</th>
                         <th>Status</th>
@@ -201,6 +295,8 @@
                         <td th:text="${course.instructor}">LABAO, CHRISTIAN JAY MENDOZA</td>
                         <td th:text="${course.units}">3.0</td>
                         <td th:text="${course.section}">BSIT-SP 2-1</td>
+                        <td th:text="${course.room}">TBD</td>
+                        <td th:text="${course.schedule}">TBD</td>
                         <td th:text="${course.rawGrade}" 
                             th:class="${course.status == 'PASSED' ? 'grade-cell grade-passed' : 
                                      course.status == 'FAILED' ? 'grade-cell grade-failed' : 
@@ -216,68 +312,206 @@
                     </tr>
                 </tbody>
             </table>
-            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
-                <button type="button"
-                        class="btn btn-primary"
-                        id="requestApprovalBtn"
-                        th:attr="data-academic-year=${currentAcademicYear}, data-semester=${student.currentSemester}"
-                        style="padding: 10px 24px; border-radius: 6px; background-color: #2196F3; color: white; font-weight: 500; font-size: 1rem;"
-                        th:disabled="${!canRequestApproval}"
-                        th:title="${!canRequestApproval} ? 'Complete all grades to request approval' : null">
-                    Request Semester Approval
-                </button>
-            </div>
-        </div>
-        <div id="approvalToast" style="display:none; position:fixed; bottom:30px; right:30px; background:#2196F3; color:white; padding:16px 24px; border-radius:8px; font-size:1.1rem; z-index:9999;">
-            Request for approval has been sent!
-        </div>
-        <!-- Modal for viewing subjects by year/semester -->
-        <div id="subjectsModal" class="modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4);">
-            <div class="modal-content" style="background:#fff; margin:40px auto; padding:24px; border-radius:8px; max-width:800px; position:relative;">
-                <span class="close" id="closeSubjectsModal" style="position:absolute; top:12px; right:18px; font-size:32px; cursor:pointer;">&times;</span>
-                <h2>Subjects by Year Level & Semester</h2>
-                <div id="subjectsModalBody">
-                    <div style="text-align:center; color:#888;">Loading subjects...</div>
+            <div style="display: flex; justify-content: flex-end; align-items: center; margin-top: 24px; gap: 12px;">
+                <!-- Hide semester approval button for 4th year, 2nd semester students -->
+                <div th:if="${student.enrollmentYear != 4 || student.currentSemester != 2}">
+                    <button type="button"
+                            class="btn btn-primary"
+                            id="requestApprovalBtn"
+                            th:classappend="${disableRequestButton} ? 'btn-disabled' : ''"
+                            th:disabled="${disableRequestButton}"
+                            th:text="${hasPendingRequest} ? 'Request Pending' : 'Request Semester Approval'">
+                    </button>
+                    <span th:if="${student.rejectedApprovalCount > 0}"
+                          class="rejected-warning-icon"
+                          tabindex="0"
+                          aria-label="You have rejected semester approval requests."
+                    >
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span class="rejected-tooltip">
+                            You have <b th:text="${student.rejectedApprovalCount}"></b> rejected semester approval request(s).<br/>
+                            Please review your requirements or contact the registrar for details.
+                        </span>
+                    </span>
                 </div>
             </div>
         </div>
+        <!-- Hide rejected request warning for 4th year, 2nd semester students -->
+        <div th:if="${hasRejectedRequest && (student.enrollmentYear != 4 || student.currentSemester != 2)}" class="alert alert-warning d-flex align-items-center mb-3" style="background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 6px; padding: 12px 18px;">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <span>Your last semester approval request was <b>rejected</b><span th:if="${latestRejectedRequestDate != null}"> on <span th:text="${latestRejectedRequestDate}"></span></span>. Please review your requirements or contact the registrar for details.</span>
+        </div>
+
+        <!-- Graduation Section -->
+        <div th:if="${isGraduated}" class="dashboard-card" style="background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white;">
+            <div class="card-title" style="color: white; text-align: center;">
+                <i class="fas fa-graduation-cap fa-3x mb-3"></i>
+                <h2>🎉 Congratulations for Graduating! 🎉</h2>
+                <p style="font-size: 1.2rem; margin-top: 16px;">You have successfully completed your academic journey. We wish you all the best in your future endeavors!</p>
+            </div>
+        </div>
+
+        <div th:if="${canRequestGraduation && !isGraduated}" class="dashboard-card">
+            <div class="card-title">
+                <i class="fas fa-graduation-cap me-2"></i>
+                Graduation Request
+            </div>
+            <div class="alert alert-info">
+                <p><strong>You are eligible to request graduation!</strong></p>
+                <p>You have completed all requirements for graduation. Click the button below to submit your graduation request.</p>
+            </div>
+            <div style="display: flex; justify-content: center; margin-top: 24px; flex-direction: column; align-items: center;">
+                <button type="button"
+                        class="btn-primary"
+                        id="requestGraduationBtn"
+                        th:disabled="${hasPendingGraduationRequest or !canSubmitGraduationRequest}"
+                        th:text="${hasPendingGraduationRequest} ? 'Graduation Request Pending' : 'Request Graduation'"
+                        style="background: #4CAF50; font-size: 1.1rem; padding: 12px 32px;">
+                </button>
+                <div th:if="${!canSubmitGraduationRequest && !hasPendingGraduationRequest}" style="color: #d32f2f; margin-top: 8px; font-size: 1rem;">
+                    You must complete all grades for this semester to request graduation.
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${hasPendingGraduationRequest && !isGraduated}" class="alert alert-info d-flex align-items-center mb-3" style="background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; border-radius: 6px; padding: 12px 18px;">
+            <i class="fas fa-info-circle me-2"></i>
+            <span>Your graduation request is currently pending approval. You will be notified once it has been processed.</span>
+        </div>
+
+        <div id="approvalToast" style="display:none; position:fixed; bottom:30px; right:30px; background:#2196F3; color:white; padding:16px 24px; border-radius:8px; font-size:1.1rem; z-index:9999;">
+            Request for approval has been sent!
+        </div>
+        <div id="graduationToast" style="display:none; position:fixed; bottom:30px; right:30px; background:#4CAF50; color:white; padding:16px 24px; border-radius:8px; font-size:1.1rem; z-index:9999;">
+            Graduation request has been sent!
+        </div>
+        <!-- Modal for viewing subjects & grades by year/semester -->
+        <div id="subjectsGradesModal" class="modal" style="display:none; position:fixed; z-index:1002; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background:#fff; margin:40px auto; padding:24px; border-radius:8px; max-width:800px; position:relative;">
+                <span class="close" id="closeSubjectsGradesModal" style="position:absolute; top:12px; right:18px; font-size:32px; cursor:pointer;">&times;</span>
+                <h2>View Subjects & Grades by Year/Semester</h2>
+                <div style="display:flex; gap:16px; margin-bottom:18px;">
+                    <div>
+                        <label for="selectYearLevelUnified">Year Level:</label>
+                        <select id="selectYearLevelUnified">
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="selectSemesterUnified">Semester:</label>
+                        <select id="selectSemesterUnified">
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="subjectsGradesTableContainer">
+                    <div id="subjectsGradesGwaDisplay" style="font-size:1.1rem; color:#1976d2; font-weight:600; margin-bottom:10px; text-align:right;">GWA: <span id="subjectsGradesGwaValue">N/A</span></div>
+                    <table class="elongated-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Course Code</th>
+                                <th>Course Name</th>
+                                <th>Instructor</th>
+                                <th>Units</th>
+                                <th>Section</th>
+                                <th>Grade</th>
+                                <th>Letter Grade</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="subjectsGradesTableBody">
+                            <tr><td colspan="9" style="text-align:center; color:#888;">Select year and semester to view subjects and grades.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Change Password Modal -->
+        <div id="changePasswordModal" class="modal" style="display:none; position:fixed; z-index:1001; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4);">
+            <div class="modal-content" style="background:#fff; margin:40px auto; padding:24px; border-radius:8px; max-width:400px; position:relative;">
+                <span class="close" id="closeChangePasswordModal" style="position:absolute; top:12px; right:18px; font-size:32px; cursor:pointer;">&times;</span>
+                <h2 style="margin-bottom:18px;">Change Password</h2>
+                <form id="changePasswordForm" th:action="@{/student/change-password}" method="post">
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label for="oldPassword">Old Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="oldPassword" name="oldPassword" required class="password-input">
+                            <button type="button" class="toggle-password" data-target="oldPassword" aria-label="Show/Hide Password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="4" y1="4" x2="20" y2="20" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label for="newPassword">New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="newPassword" name="newPassword" required minlength="6" class="password-input">
+                            <button type="button" class="toggle-password" data-target="newPassword" aria-label="Show/Hide Password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:16px;">
+                        <label for="confirmPassword">Confirm New Password</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" class="password-input">
+                            <button type="button" class="toggle-password" data-target="confirmPassword" aria-label="Show/Hide Password" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
+                                <svg class="eye-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="changePasswordError" style="color:#d32f2f; margin-bottom:12px; display:none;"></div>
+                    <div style="display:flex; gap:10px; justify-content:flex-end;">
+                        <button type="button" id="cancelChangePassword" class="btn-secondary" style="background:#e0e0e0;color:#444;border:none;border-radius:6px;padding:10px 22px;font-size:1rem;font-weight:600;cursor:pointer;">Cancel</button>
+                        <button type="submit" class="btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <script>
-        document.getElementById('requestApprovalBtn').addEventListener('click', function() {
-            var btn = this;
-            btn.disabled = true;
-            var academicYear = btn.getAttribute('data-academic-year');
-            var semester = btn.getAttribute('data-semester');
-            var formData = new URLSearchParams();
-            formData.append('academicYear', academicYear);
-            formData.append('semester', semester);
-
-            // Get CSRF token and header name from meta tags
-            var csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
-            var csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-
-            fetch('/approvals/request', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    [csrfHeader]: csrfToken // Add CSRF token here
-                },
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    btn.disabled = true;
-                    showToast();
-                } else {
+        // Semester approval button - only add event listener if button exists
+        const approvalBtn = document.getElementById('requestApprovalBtn');
+        if (approvalBtn) {
+            approvalBtn.addEventListener('click', function() {
+                const btn = this;
+                if (btn.classList.contains('btn-disabled') || btn.disabled) return;
+                btn.disabled = true;
+                btn.classList.add('btn-disabled');
+                btn.textContent = 'Request Pending...';
+                const studentId = btn.dataset.studentId;
+                const comments = "Requesting approval for next semester.";
+                const token = document.querySelector("meta[name='_csrf']").getAttribute("content");
+                const header = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+                fetch(`/student/approval/request`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [header]: token
+                    },
+                    body: JSON.stringify({ studentId, comments })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        showToast();
+                    } else {
+                        alert('Failed to send request. Please try again.');
+                        btn.disabled = false;
+                        btn.classList.remove('btn-disabled');
+                        btn.textContent = 'Request Semester Approval';
+                    }
+                })
+                .catch(() => {
                     alert('Failed to send request. Please try again.');
                     btn.disabled = false;
-                }
-            })
-            .catch(() => {
-                alert('Failed to send request. Please try again.');
-                btn.disabled = false;
+                    btn.classList.remove('btn-disabled');
+                    btn.textContent = 'Request Semester Approval';
+                });
             });
-        });
+        }
 
         function showToast() {
             var toast = document.getElementById('approvalToast');
@@ -287,56 +521,165 @@
             }, 3000);
         }
 
-        document.getElementById('viewSubjectsBtn').addEventListener('click', function() {
-            document.getElementById('subjectsModal').style.display = 'block';
-            loadSubjectsByYearSemester();
-        });
-        document.getElementById('closeSubjectsModal').onclick = function() {
-            document.getElementById('subjectsModal').style.display = 'none';
+        document.getElementById('viewSubjectsGradesBtn').onclick = function() {
+            document.getElementById('subjectsGradesModal').style.display = 'block';
+            fetchAndDisplaySubjectsGrades();
         };
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('subjectsModal')) {
-                document.getElementById('subjectsModal').style.display = 'none';
+        document.getElementById('closeSubjectsGradesModal').onclick = function() {
+            document.getElementById('subjectsGradesModal').style.display = 'none';
+        };
+        window.addEventListener('click', function(event) {
+            var modal = document.getElementById('subjectsGradesModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
             }
-        };
+        });
+        function fetchAndDisplaySubjectsGrades() {
+            const yearLevel = document.getElementById('selectYearLevelUnified').value;
+            const semester = document.getElementById('selectSemesterUnified').value;
+            const tbody = document.getElementById('subjectsGradesTableBody');
+            const gwaSpan = document.getElementById('subjectsGradesGwaValue');
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888;">Loading...</td></tr>';
+            fetch(`/student/subjects-grades/all`)
+                .then(res => res.json())
+                .then(data => {
+                    const filtered = (data.subjects || []).filter(subj => subj.yearLevel == yearLevel && subj.semester == semester);
+                    if (filtered.length === 0) {
+                        gwaSpan.textContent = 'N/A';
+                        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888;">No data available for this period.</td></tr>';
+                        return;
+                    }
+                    // Calculate GWA for this period
+                    const gwaList = filtered.map(s => s.numericGrade).filter(gwa => gwa !== null && !isNaN(gwa));
+                    if (gwaList.length > 0) {
+                        gwaSpan.textContent = (gwaList.reduce((a, b) => a + b, 0) / gwaList.length).toFixed(2);
+                    } else {
+                        gwaSpan.textContent = 'N/A';
+                    }
+                    tbody.innerHTML = filtered.map((course, idx) => `
+                        <tr>
+                            <td>${idx + 1}</td>
+                            <td>${course.code}</td>
+                            <td>${course.name}</td>
+                            <td>${course.instructor}</td>
+                            <td>${course.units}</td>
+                            <td>${course.section}</td>
+                            <td>${course.rawGrade}</td>
+                            <td>${course.letterGrade}</td>
+                            <td>${course.status}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    gwaSpan.textContent = 'N/A';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#888;">No data available for this period.</td></tr>';
+                });
+        }
+        document.getElementById('selectYearLevelUnified').addEventListener('change', fetchAndDisplaySubjectsGrades);
+        document.getElementById('selectSemesterUnified').addEventListener('change', fetchAndDisplaySubjectsGrades);
 
-        function loadSubjectsByYearSemester() {
-            const modalBody = document.getElementById('subjectsModalBody');
-            modalBody.innerHTML = '<div style="text-align:center; color:#888;">Loading subjects...</div>';
-            fetch('/student/subjects/all', {
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+        // Change Password Modal logic
+        document.getElementById('changePasswordBtn').onclick = function() {
+            document.getElementById('changePasswordModal').style.display = 'block';
+        };
+        document.getElementById('closeChangePasswordModal').onclick = function() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        };
+        document.getElementById('cancelChangePassword').onclick = function() {
+            document.getElementById('changePasswordModal').style.display = 'none';
+        };
+        window.addEventListener('click', function(event) {
+            var modal = document.getElementById('changePasswordModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        });
+        document.querySelectorAll('.toggle-password').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(btn.getAttribute('data-target'));
+                if (target.type === 'password') {
+                    target.type = 'text';
+                    btn.querySelector('.eye-icon').outerHTML = `<svg class='eye-icon' xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='12' rx='8' ry='5'/><line x1='4' y1='4' x2='20' y2='20' /></svg>`;
+                } else {
+                    target.type = 'password';
+                    btn.querySelector('.eye-icon').outerHTML = `<svg class='eye-icon' xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='#888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><ellipse cx='12' cy='12' rx='8' ry='5'/><circle cx='12' cy='12' r='2.5'/></svg>`;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.subjects || data.subjects.length === 0) {
-                    modalBody.innerHTML = '<div style="text-align:center; color:#888;">No subjects found.</div>';
-                    return;
-                }
-                // Group by year and semester
-                const grouped = {};
-                data.subjects.forEach(subj => {
-                    const key = `Year ${subj.yearLevel} - Semester ${subj.semester}`;
-                    if (!grouped[key]) grouped[key] = [];
-                    grouped[key].push(subj);
-                });
-                let html = '';
-                Object.entries(grouped).forEach(([group, subjects]) => {
-                    html += `<div style="margin-bottom:24px;">
-                                <h3 style="color:#007bff; margin-bottom:10px;">${group}</h3>
-                                <ul style="padding-left:20px;">`;
-                    subjects.forEach(subj => {
-                        html += `<li><strong>${subj.code}</strong>: ${subj.name}</li>`;
-                    });
-                    html += '</ul></div>';
-                });
-                modalBody.innerHTML = html;
-            })
-            .catch(() => {
-                modalBody.innerHTML = '<div style="text-align:center; color:#e74c3c;">Error loading subjects.</div>';
             });
+        });
+        document.getElementById('changePasswordForm').onsubmit = function(e) {
+            var newPassword = document.getElementById('newPassword').value;
+            var confirmPassword = document.getElementById('confirmPassword').value;
+            var errorDiv = document.getElementById('changePasswordError');
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'New passwords do not match!';
+                errorDiv.style.display = 'block';
+                e.preventDefault();
+                return false;
+            }
+            errorDiv.style.display = 'none';
+            // Allow form to submit
+        };
+        document.getElementById('downloadFormBtn').onclick = function() {
+            window.location.href = '/student/download-form';
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            var icon = document.querySelector('.rejected-warning-icon');
+            if (icon) {
+                var tooltip = icon.querySelector('.rejected-tooltip');
+                icon.addEventListener('mouseenter', function() {
+                    tooltip.style.display = 'block';
+                });
+                icon.addEventListener('mouseleave', function() {
+                    tooltip.style.display = 'none';
+                });
+            }
+        });
+
+        // Graduation request button
+        const graduationBtn = document.getElementById('requestGraduationBtn');
+        if (graduationBtn) {
+            graduationBtn.addEventListener('click', function() {
+                const btn = this;
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.textContent = 'Request Pending...';
+                
+                const token = document.querySelector("meta[name='_csrf']").getAttribute("content");
+                const header = document.querySelector("meta[name='_csrf_header']").getAttribute("content");
+                
+                fetch('/graduation/student/request', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        [header]: token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showGraduationToast();
+                        btn.textContent = 'Graduation Request Pending';
+                        btn.disabled = true;
+                    } else {
+                        alert(data.error || 'Failed to send graduation request. Please try again.');
+                        btn.disabled = false;
+                        btn.textContent = 'Request Graduation';
+                    }
+                })
+                .catch(() => {
+                    alert('Failed to send graduation request. Please try again.');
+                    btn.disabled = false;
+                    btn.textContent = 'Request Graduation';
+                });
+            });
+        }
+
+        function showGraduationToast() {
+            var toast = document.getElementById('graduationToast');
+            toast.style.display = 'block';
+            setTimeout(function() {
+                toast.style.display = 'none';
+            }, 3000);
         }
         </script>
     </div>

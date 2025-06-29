@@ -5,39 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Error</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f8f9fa;
+        }
+        .error-container {
+            text-align: center;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        .error-icon {
+            color: #dc3545;
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .error-message {
+            color: #6c757d;
+            margin: 1rem 0;
+        }
+    </style>
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow">
-                    <div class="card-body text-center">
-                        <h2 class="card-title text-danger mb-4">Oops! Something went wrong</h2>
-                        
-                        <div th:if="${status}" class="mb-3">
-                            <h4 class="text-muted" th:text="${status}">Status</h4>
-                        </div>
-                        
-                        <div th:if="${error}" class="mb-3">
-                            <p class="text-muted" th:text="${error}">Error</p>
-                        </div>
-                        
-                        <div th:if="${message}" class="mb-4">
-                            <p class="text-muted" th:text="${message}">Message</p>
-                        </div>
-
-                        <div th:if="${trace}" class="mb-4">
-                            <pre class="text-start bg-light p-3" style="font-size: 12px;" th:text="${trace}">Stack Trace</pre>
-                        </div>
-                        
-                        <div class="mt-4">
-                            <a href="/" class="btn btn-primary me-2">Return to Home</a>
-                            <a href="javascript:history.back()" class="btn btn-secondary">Go Back</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="error-container">
+        <i class="fas fa-exclamation-triangle error-icon"></i>
+        <h1 class="h4 mb-3">Error</h1>
+        <p class="error-message" th:text="${message != null ? message : 'An error occurred. Please try again.'}"></p>
+        <p class="error-details text-muted small" th:if="${error != null}" th:text="${error}"></p>
+        <a href="/admin/home" class="btn btn-primary mt-3">
+            <i class="fas fa-home"></i> Back to Dashboard
+        </a>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

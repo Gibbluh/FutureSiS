@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layout :: layout(~{::content}, ~{::title}, 'subject-sections')}">
+<head>
+    <title>Assign Faculty to Subject Section</title>
+</head>
+<body>
+<div th:fragment="content">
+    <div class="row bg-white text-black p-3 mb-3 rounded border align-items-center">
+        <div class="col">
+            <h2 class="d-flex align-items-center" style="color: #111;"><i class="fas fa-user-plus me-2" style="color: #111;"></i> Assign Faculty to Subject Section</h2>
+            <p class="mb-0" style="color: #333;">Assign faculty members to teach this section</p>
+        </div>
+        <div class="col-auto">
+            <a th:href="@{/admin/subject-sections}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Subject Sections
+            </a>
+        </div>
+    </div>
+    <!-- Error Messages -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <!-- Subject Section Info -->
+    <div class="row mt-3">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-info-circle"></i> Subject Section Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Subject:</strong> <span th:text="${subjectSection.subject.code + ' - ' + subjectSection.subject.name}"></span></p>
+                            <p><strong>Section:</strong> <span th:text="${subjectSection.section.name}"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Academic Year:</strong> <span th:text="${subjectSection.academicYear}"></span></p>
+                            <p><strong>Semester:</strong> <span th:text="${subjectSection.semester == 1 ? 'First Semester' : 'Second Semester'}"></span></p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Schedule:</strong> <span th:text="${subjectSection.schedule != null ? subjectSection.schedule : 'TBD'}"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Room:</strong> <span th:text="${subjectSection.room != null ? subjectSection.room : 'TBD'}"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Current Faculty -->
+    <div class="row mt-3">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-users"></i> Current Faculty Assignments</h5>
+                </div>
+                <div class="card-body">
+                    <div th:if="${subjectSection.teachingAssignments == null or subjectSection.teachingAssignments.isEmpty()}" 
+                         class="text-center text-muted py-3">
+                        <i class="fas fa-user-slash fa-2x mb-2"></i>
+                        <p>No faculty currently assigned to this section.</p>
+                    </div>
+                    <div th:if="${subjectSection.teachingAssignments != null and !subjectSection.teachingAssignments.isEmpty()}" 
+                         class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Faculty ID</th>
+                                    <th>Name</th>
+                                    <th>Position</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="assignment : ${subjectSection.teachingAssignments}">
+                                    <td th:text="${assignment.faculty.facultyId}"></td>
+                                    <td th:text="${assignment.faculty.firstName + ' ' + assignment.faculty.lastName}"></td>
+                                    <td th:text="${assignment.faculty.position}"></td>
+                                    <td>
+                                        <form th:action="@{/admin/subject-sections/{sectionId}/remove-faculty/{facultyId}(sectionId=${subjectSection.id},facultyId=${assignment.faculty.id})}" 
+                                              method="post" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger" 
+                                                    onclick="return confirm('Are you sure you want to remove this faculty member?')">
+                                                <i class="fas fa-user-minus"></i> Remove
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Assign New Faculty -->
+    <div class="row mt-3">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-user-plus"></i> Assign New Faculty</h5>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/subject-sections/{id}/assign-faculty(id=${subjectSection.id})}" method="post">
+                        <div class="mb-3">
+                            <label for="facultyId" class="form-label">Select Faculty Member</label>
+                            <select class="form-select" id="facultyId" name="facultyId" required>
+                                <option value="">Choose a faculty member...</option>
+                                <option th:each="faculty : ${faculties}" 
+                                        th:value="${faculty.id}"
+                                        th:text="${faculty.firstName + ' ' + faculty.lastName + ' (' + faculty.facultyId + ')'}"
+                                        th:unless="${subjectSection.teachingAssignments != null and subjectSection.teachingAssignments.![faculty.id].contains(faculty.id)}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a th:href="@{/admin/subject-sections}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Assign Faculty
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html> 

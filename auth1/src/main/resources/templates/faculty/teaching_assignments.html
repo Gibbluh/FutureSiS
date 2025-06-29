@@ -119,23 +119,26 @@
         </div>
 
         <div class="subjects-section">
-            <h2>Your Assigned Subjects</h2>
+            <h2>Your Assigned Subject Sections</h2>
             <div th:if="${assignments == null || assignments.isEmpty()}" 
                  style="text-align: center; padding: 20px; color: #666;">
-                No subjects assigned yet.
+                No subject sections assigned yet.
             </div>
             <div th:if="${assignments != null && !assignments.isEmpty()}" 
                  class="subjects-grid">
                 <div th:each="assignment : ${assignments}" class="subject-card">
-                    <div class="subject-code" th:text="${assignment.subject != null ? assignment.subject.code : 'N/A'}">SUBJ101</div>
-                    <div class="subject-name" th:text="${assignment.subject != null ? assignment.subject.name : 'N/A'}">Subject Name</div>
+                    <div class="subject-code" th:text="${assignment.subjectSection != null ? assignment.subjectSection.subject.code : 'N/A'}">SUBJ101</div>
+                    <div class="subject-name" th:text="${assignment.subjectSection != null ? assignment.subjectSection.subject.name : 'N/A'}">Subject Name</div>
                     <div class="subject-details">
-                        <p><strong>Academic Year:</strong> <span th:text="${assignment.academicYear != null ? assignment.academicYear : 'N/A'}">2023-2024</span></p>
-                        <p><strong>Semester:</strong> <span th:text="${assignment.semester != null ? assignment.semester : 'N/A'}">1</span></p>
-                        <p><strong>Course:</strong> <span th:text="${assignment.subject != null && assignment.subject.course != null ? assignment.subject.course.name : 'N/A'}">Course Name</span></p>
+                        <p><strong>Section:</strong> <span th:text="${assignment.subjectSection != null ? assignment.subjectSection.section.name : 'N/A'}">Section A</span></p>
+                        <p><strong>Academic Year:</strong> <span th:text="${assignment.subjectSection != null ? assignment.subjectSection.academicYear : 'N/A'}">2023-2024</span></p>
+                        <p><strong>Semester:</strong> <span th:text="${assignment.subjectSection != null ? assignment.subjectSection.semester : 'N/A'}">1</span></p>
+                        <p><strong>Course:</strong> <span th:text="${assignment.subjectSection != null && assignment.subjectSection.subject.course != null ? assignment.subjectSection.subject.course.name : 'N/A'}">Course Name</span></p>
+                        <p><strong>Schedule:</strong> <span th:text="${assignment.subjectSection != null ? (assignment.subjectSection.schedule != null ? assignment.subjectSection.schedule : 'TBD') : 'N/A'}">TBD</span></p>
+                        <p><strong>Room:</strong> <span th:text="${assignment.subjectSection != null ? (assignment.subjectSection.room != null ? assignment.subjectSection.room : 'TBD') : 'N/A'}">TBD</span></p>
                     </div>
-                    <a th:if="${assignment.subject != null}" 
-                       th:href="@{/faculty/grades/{id}(id=${assignment.subject.id})}" 
+                    <a th:if="${assignment.subjectSection != null}" 
+                       th:href="@{/faculty/grades/{id}(id=${assignment.subjectSection.id})}" 
                        class="manage-btn">
                         Manage Grades
                     </a>
