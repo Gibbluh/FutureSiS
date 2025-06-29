@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface SemesterApprovalRequestRepository extends JpaRepository<SemesterApprovalRequest, Long> {
     
     @Query("SELECT r FROM SemesterApprovalRequest r WHERE r.student.id = :studentId AND r.academicYear = :academicYear AND r.semester = :semester")
-    Optional<SemesterApprovalRequest> findByStudentIdAndAcademicYearAndSemester(
+    List<SemesterApprovalRequest> findAllByStudentIdAndAcademicYearAndSemester(
         @Param("studentId") Long studentId,
         @Param("academicYear") String academicYear,
         @Param("semester") Integer semester
@@ -33,9 +33,28 @@ public interface SemesterApprovalRequestRepository extends JpaRepository<Semeste
     );
 
     @Query("SELECT r FROM SemesterApprovalRequest r WHERE r.student.id = :studentId AND r.academicYear = :academicYear AND r.semester = :semester AND r.status IN ('PENDING', 'APPROVED')")
-    Optional<SemesterApprovalRequest> findActiveByStudentIdAndAcademicYearAndSemester(
+    List<SemesterApprovalRequest> findAllActiveByStudentIdAndAcademicYearAndSemester(
         @Param("studentId") Long studentId,
         @Param("academicYear") String academicYear,
         @Param("semester") Integer semester
     );
+
+    @Query("SELECT r FROM SemesterApprovalRequest r WHERE r.student.id = :studentId AND r.academicYear = :academicYear AND r.yearLevel = :yearLevel AND r.semester = :semester AND r.status IN ('PENDING', 'APPROVED')")
+    List<SemesterApprovalRequest> findAllActiveByStudentIdAndAcademicYearAndYearLevelAndSemester(
+        @Param("studentId") Long studentId,
+        @Param("academicYear") String academicYear,
+        @Param("yearLevel") Integer yearLevel,
+        @Param("semester") Integer semester
+    );
+
+    @Query("SELECT r FROM SemesterApprovalRequest r WHERE r.student.id = :studentId AND r.academicYear = :academicYear AND r.yearLevel = :yearLevel AND r.semester = :semester")
+    List<SemesterApprovalRequest> findAllByStudentIdAndAcademicYearAndYearLevelAndSemester(
+        @Param("studentId") Long studentId,
+        @Param("academicYear") String academicYear,
+        @Param("yearLevel") Integer yearLevel,
+        @Param("semester") Integer semester
+    );
+
+    @Query("SELECT r FROM SemesterApprovalRequest r WHERE r.student.id = :studentId AND r.status = 'REJECTED' ORDER BY r.requestDate DESC")
+    List<SemesterApprovalRequest> findRejectedRequestsByStudentIdOrderByRequestDateDesc(@Param("studentId") Long studentId);
 } 

@@ -10,6 +10,15 @@ import java.time.LocalDate;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import java.util.Map;
+import java.util.HashMap;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/admin")
@@ -22,19 +31,22 @@ public class GradeController {
     private final CourseRepository courseRepository;
     private final TeachingAssignmentRepository teachingAssignmentRepository;
     private final FacultyRepository facultyRepository;
+    private final SubjectSectionRepository subjectSectionRepository;
 
     public GradeController(StudentRepository studentRepository,
                           SubjectRepository subjectRepository,
                           GradeRepository gradeRepository,
                           CourseRepository courseRepository,
                           TeachingAssignmentRepository teachingAssignmentRepository,
-                          FacultyRepository facultyRepository) {
+                          FacultyRepository facultyRepository,
+                          SubjectSectionRepository subjectSectionRepository) {
         this.studentRepository = studentRepository;
         this.subjectRepository = subjectRepository;
         this.gradeRepository = gradeRepository;
         this.courseRepository = courseRepository;
         this.teachingAssignmentRepository = teachingAssignmentRepository;
         this.facultyRepository = facultyRepository;
+        this.subjectSectionRepository = subjectSectionRepository;
     }
 
     @GetMapping("/students/{studentId}/grades")
@@ -67,51 +79,60 @@ public class GradeController {
                 return "admin/student_grades";
             }
 
-            logger.info("Student validation passed. Program: {}, Year: {}, Semester: {}", 
+            String currentAcademicYear = student.getAcademicYear();
+            logger.info("Student validation passed. Program: {}, Year: {}, Semester: {}, Academic Year: {}",
                 student.getProgram().getName(),
                 student.getEnrollmentYear(),
-                student.getCurrentSemester());
+                student.getCurrentSemester(),
+                currentAcademicYear);
 
-            String currentAcademicYear = getCurrentAcademicYear();
-            int currentSemester = student.getCurrentSemester();
+            // Fetch grades for the student's current semester ONLY
+            List<Grade> currentGrades = gradeRepository.findByStudentIdAndAcademicYearAndSemesterWithSubject(
+                studentId,
+                currentAcademicYear,
+                student.getCurrentSemester()
+            );
 
-            // Get subjects for the student's current year and semester
-            logger.info("Fetching subjects for student {} in year {} semester {}", 
-                studentId, student.getEnrollmentYear(), currentSemester);
-            List<Subject> availableSubjects = getAvailableSubjects(student, currentSemester);
-            
-            if (availableSubjects.isEmpty()) {
-                String message = String.format(
-                    "No subjects found for %s, Year %d, Semester %d. Please ensure the curriculum is properly set up.", 
-                    student.getProgram().getName(), 
-                    student.getEnrollmentYear(), 
-                    currentSemester
-                );
-                logger.warn(message);
-                model.addAttribute("warningMessage", message);
-            } else {
-                logger.info("Found {} subjects for student", availableSubjects.size());
-                for (Subject subject : availableSubjects) {
-                    logger.info("Subject: {} - {}", subject.getCode(), subject.getName());
-                }
+            // Filter grades to only those matching the student's current year, section, and semester
+            currentGrades = currentGrades.stream()
+                .filter(g -> {
+                    SubjectSection ss = g.getSubjectSection();
+                    return ss != null
+                        && ss.getSection() != null
+                        && ss.getSection().getId().equals(student.getSection() != null ? student.getSection().getId() : null)
+                        && ss.getSubject().getYearLevel() == student.getEnrollmentYear()
+                        && ss.getSemester() == student.getCurrentSemester()
+                        && ss.getAcademicYear().equals(currentAcademicYear);
+                })
+                .collect(Collectors.toList());
+            logger.info("Found {} grades for student {} in the current semester", currentGrades.size(), studentId);
+
+            // Get all faculty members associated with the student's program
+            List<Faculty> faculties = student.getProgram() != null ? 
+                facultyRepository.findByFacultyPrograms_Program_Id(student.getProgram().getId()) : 
+                List.of();
+            logger.info("Found {} faculty members for program {}", faculties.size(), student.getProgram() != null ? student.getProgram().getName() : "N/A");
+
+            // Get current teaching assignments for the grades' subject sections
+            Map<Long, Long> assignedFacultyMap = new HashMap<>();
+            for (Grade grade : currentGrades) {
+                teachingAssignmentRepository.findBySubjectSection(grade.getSubjectSection()).ifPresent(ta -> {
+                    assignedFacultyMap.put(grade.getSubjectSection().getId(), ta.getFaculty().getId());
+                });
             }
-            
-            logger.info("Fetching existing grades for student");
-            List<Grade> existingGrades = gradeRepository.findByStudentIdAndAcademicYearAndSemesterWithSubject(
-                    studentId, currentAcademicYear, currentSemester);
-            logger.info("Found {} existing grades", existingGrades.size());
 
-            // Get all faculty members with their programs
-            List<Faculty> faculties = facultyRepository.findAllWithPrograms();
-            logger.info("Found {} faculty members", faculties.size());
+            String assignedFacultyMapJson = "{}";
+            try {
+                assignedFacultyMapJson = new ObjectMapper().writeValueAsString(assignedFacultyMap);
+            } catch (JsonProcessingException e) {
+                logger.error("Error converting assigned faculty map to JSON", e);
+            }
 
             // Add all necessary attributes to the model
             model.addAttribute("student", student);
-            model.addAttribute("subjects", availableSubjects);
-            model.addAttribute("grades", existingGrades);
-            model.addAttribute("academicYear", currentAcademicYear);
-            model.addAttribute("semester", currentSemester);
+            model.addAttribute("grades", currentGrades);
             model.addAttribute("faculties", faculties);
+            model.addAttribute("assignedFacultyMapJson", assignedFacultyMapJson);
 
             logger.info("Successfully prepared grade view model");
             return "admin/student_grades";
@@ -132,32 +153,24 @@ public class GradeController {
 
     @PostMapping("/students/{studentId}/grades/save")
     public String updateGrades(@PathVariable(required = true) Long studentId,
-                             @RequestParam Long subjectId,
+                             @RequestParam Long subjectSectionId,
                              @RequestParam(required = false) Double grade,
-                             @RequestParam String academicYear,
-                             @RequestParam Integer semester,
                              @RequestParam(required = false) String facultyId,
                              Model model,
                              RedirectAttributes redirectAttributes) {
-        logger.debug("Received grade update request - Parameters: studentId={}, subjectId={}, grade={}, year={}, semester={}, facultyId={}", 
-            studentId, subjectId, grade, academicYear, semester, facultyId);
+        logger.debug("Received grade update request - Parameters: studentId={}, subjectSectionId={}, grade={}, facultyId={}", 
+            studentId, subjectSectionId, grade, facultyId);
             
         try {
             // Validate input parameters
             if (studentId == null || studentId <= 0) {
                 throw new IllegalArgumentException("Invalid student ID");
             }
-            if (subjectId == null || subjectId <= 0) {
-                throw new IllegalArgumentException("Invalid subject ID");
+            if (subjectSectionId == null || subjectSectionId <= 0) {
+                throw new IllegalArgumentException("Invalid subject section ID");
             }
             if (grade == null) {
                 throw new IllegalArgumentException("Grade cannot be null");
-            }
-            if (academicYear == null || academicYear.trim().isEmpty()) {
-                throw new IllegalArgumentException("Academic year cannot be null or empty");
-            }
-            if (semester == null || semester < 1 || semester > 2) {
-                throw new IllegalArgumentException("Invalid semester value");
             }
             
             // Validate grade range
@@ -170,50 +183,37 @@ public class GradeController {
                     .orElseThrow(() -> new RuntimeException("Student not found with ID: " + studentId));
             logger.debug("Found student: {} {} (ID: {})", student.getFirstName(), student.getLastName(), student.getId());
 
-            // Find subject
-            Subject subject = subjectRepository.findById(subjectId)
-                    .orElseThrow(() -> new RuntimeException("Subject not found with ID: " + subjectId));
-            logger.debug("Found subject: {} - {} (ID: {})", subject.getCode(), subject.getName(), subject.getId());
+            // Find subject section
+            SubjectSection subjectSection = subjectSectionRepository.findById(subjectSectionId)
+                    .orElseThrow(() -> new RuntimeException("Subject Section not found with ID: " + subjectSectionId));
+            logger.debug("Found subject section: {} - {} (Section: {})", 
+                subjectSection.getSubject().getCode(), 
+                subjectSection.getSubject().getName(), 
+                subjectSection.getSection().getName());
 
             // Find or create teaching assignment if faculty is specified
             if (facultyId != null && !facultyId.trim().isEmpty()) {
                 Faculty faculty = facultyRepository.findByFacultyId(facultyId)
                     .orElseThrow(() -> new RuntimeException("Faculty not found with ID: " + facultyId));
                 
-                // Load faculty with teaching assignments to ensure we have the full collection
-                faculty = facultyRepository.findByFacultyIdWithTeachingAssignments(facultyId)
-                    .orElseThrow(() -> new RuntimeException("Faculty not found with ID: " + facultyId));
-                
                 // Check if teaching assignment already exists
-                boolean hasAssignment = faculty.getTeachingAssignments().stream()
-                    .anyMatch(ta -> ta.getSubject().getId().equals(subjectId) &&
-                                  ta.getAcademicYear().equals(academicYear) &&
-                                  ta.getSemester().equals(semester));
+                boolean hasAssignment = teachingAssignmentRepository
+                    .existsByFacultyIdAndSubjectSectionId(faculty.getId(), subjectSectionId);
                 
                 if (!hasAssignment) {
-                    TeachingAssignment teachingAssignment = new TeachingAssignment();
-                    teachingAssignment.setFaculty(faculty);
-                    teachingAssignment.setSubject(subject);
-                    teachingAssignment.setAcademicYear(academicYear);
-                    teachingAssignment.setSemester(semester);
-                    
-                    // Add to both sides of the relationship
-                    faculty.addTeachingAssignment(teachingAssignment);
-                    
-                    // Save both the teaching assignment and faculty
+                    TeachingAssignment teachingAssignment = new TeachingAssignment(faculty, subjectSection);
                     teachingAssignmentRepository.save(teachingAssignment);
-                    facultyRepository.save(faculty);
                     
-                    logger.info("Created new teaching assignment for faculty {} and subject {}", 
-                        faculty.getFacultyId(), subject.getCode());
+                    logger.info("Created new teaching assignment for faculty {} and subject section {}", 
+                        faculty.getFacultyId(), subjectSectionId);
                 }
             }
 
             // Find existing grade or create new one
             Grade gradeEntity;
             try {
-                gradeEntity = gradeRepository.findByStudentIdAndSubjectId(studentId, subjectId, academicYear, semester)
-                        .orElse(new Grade(student, subject, null, academicYear, semester));
+                gradeEntity = gradeRepository.findByStudentIdAndSubjectSectionId(studentId, subjectSectionId)
+                        .orElse(new Grade(student, subjectSection, null));
                 logger.debug("Found existing grade: {}", gradeEntity != null ? gradeEntity.getId() : "new grade");
             } catch (Exception e) {
                 logger.error("Error finding/creating grade entity", e);
@@ -224,14 +224,13 @@ public class GradeController {
             try {
                 if (gradeEntity != null) {
                     gradeEntity.setRawGrade(grade);
-                    gradeEntity.setAcademicYear(academicYear);
-                    gradeEntity.setSemester(semester);
                     
-                    logger.debug("Saving grade - Raw: {}, GWA: {}, Student: {}, Subject: {}", 
+                    logger.debug("Saving grade - Raw: {}, GWA: {}, Student: {}, Subject: {}, Section: {}", 
                         gradeEntity.getRawGrade(), 
                         gradeEntity.getGwa(),
                         student.getStudentNumber(), 
-                        subject.getCode());
+                        subjectSection.getSubject().getCode(),
+                        subjectSection.getSection().getName());
 
                     gradeRepository.save(gradeEntity);
                     logger.info("Grade saved successfully - ID: {}", gradeEntity.getId());
@@ -243,8 +242,9 @@ public class GradeController {
                 throw new RuntimeException("Error saving grade: " + e.getMessage());
             }
 
-            String message = String.format("Grade saved successfully for %s - Raw: %.2f, GWA: %.2f (%s)", 
-                subject.getName(), 
+            String message = String.format("Grade saved successfully for %s - %s - Raw: %.2f, GWA: %.2f (%s)", 
+                subjectSection.getSubject().getName(),
+                subjectSection.getSection().getName(),
                 gradeEntity.getRawGrade(),
                 gradeEntity.getGwa(),
                 gradeEntity.getLetterGrade());
@@ -252,9 +252,9 @@ public class GradeController {
             
             return "redirect:/admin/students/" + studentId + "/grades";
         } catch (Exception e) {
-            logger.error("Error in updateGrades - Details: Student ID={}, Subject ID={}, Grade={}", 
+            logger.error("Error in updateGrades - Details: Student ID={}, Subject Section ID={}, Grade={}", 
                 studentId != null ? studentId : "null", 
-                subjectId != null ? subjectId : "null", 
+                subjectSectionId != null ? subjectSectionId : "null", 
                 grade != null ? grade : "null", 
                 e);
                 
@@ -263,14 +263,17 @@ public class GradeController {
                 if (studentId != null) {
                     Student student = studentRepository.findById(studentId).orElse(null);
                     if (student != null) {
-                        String currentAcademicYear = getCurrentAcademicYear();
-                        List<Subject> availableSubjects = getAvailableSubjects(student, student.getCurrentSemester());
-                        List<Grade> existingGrades = gradeRepository.findByStudentIdAndAcademicYearAndSemesterWithSubject(
-                            studentId, currentAcademicYear, student.getCurrentSemester());
+                        String currentAcademicYear = student.getAcademicYear();
+                        List<Subject> enrolledSubjects = gradeRepository.findByStudentIdAndAcademicYearAndSemesterWithSubject(
+                            studentId, currentAcademicYear, student.getCurrentSemester())
+                            .stream()
+                            .map(Grade::getSubject)
+                            .collect(Collectors.toList());
 
                         model.addAttribute("student", student);
-                        model.addAttribute("subjects", availableSubjects);
-                        model.addAttribute("grades", existingGrades);
+                        model.addAttribute("subjects", enrolledSubjects);
+                        model.addAttribute("grades", gradeRepository.findByStudentIdAndAcademicYearAndSemesterWithSubject(
+                            studentId, currentAcademicYear, student.getCurrentSemester()));
                         model.addAttribute("academicYear", currentAcademicYear);
                         model.addAttribute("semester", student.getCurrentSemester());
                         
@@ -289,6 +292,60 @@ public class GradeController {
             
             // Return to the same page with error message
             return "admin/student_grades";
+        }
+    }
+
+    @PostMapping("/grades/update/{gradeId}")
+    @ResponseBody
+    public Map<String, Object> updateGradeViaAjax(@PathVariable Long gradeId,
+                                                @RequestParam Optional<Double> rawGrade,
+                                                @RequestParam Long subjectSectionId,
+                                                @RequestParam(required = false) Long facultyId) {
+        try {
+            Grade grade = gradeRepository.findById(gradeId)
+                .orElseThrow(() -> new RuntimeException("Grade not found with ID: " + gradeId));
+
+            grade.setRawGrade(rawGrade.orElse(null));
+            gradeRepository.save(grade);
+
+            // Handle faculty assignment
+            if (facultyId != null) {
+                Faculty faculty = facultyRepository.findById(facultyId)
+                    .orElseThrow(() -> new RuntimeException("Faculty not found with id: " + facultyId));
+                
+                SubjectSection subjectSection = subjectSectionRepository.findById(subjectSectionId)
+                    .orElseThrow(() -> new RuntimeException("Subject Section not found with id: " + subjectSectionId));
+
+                // Find existing teaching assignment for this subject section
+                Optional<TeachingAssignment> existingAssignment = teachingAssignmentRepository.findBySubjectSection(subjectSection);
+
+                if (existingAssignment.isPresent()) {
+                    // Assignment exists, update it
+                    TeachingAssignment ta = existingAssignment.get();
+                    if (!ta.getFaculty().getId().equals(facultyId)) {
+                        ta.setFaculty(faculty);
+                        teachingAssignmentRepository.save(ta);
+                        logger.info("Updated teaching assignment for subject section {} to faculty {}", subjectSectionId, facultyId);
+                    }
+                } else {
+                    // No assignment exists, create a new one
+                    TeachingAssignment newAssignment = new TeachingAssignment(faculty, subjectSection);
+                    teachingAssignmentRepository.save(newAssignment);
+                    logger.info("Created new teaching assignment for subject section {} with faculty {}", subjectSectionId, facultyId);
+                }
+            } else {
+                 // if facultyId is null, it means we might need to un-assign
+                 List<TeachingAssignment> assignments = teachingAssignmentRepository.findBySubjectSectionId(subjectSectionId);
+                 if (!assignments.isEmpty()) {
+                    teachingAssignmentRepository.deleteAll(assignments);
+                    logger.info("Removed {} teaching assignment(s) for subject section {}", assignments.size(), subjectSectionId);
+                }
+            }
+
+            return Map.of("success", true, "message", "Grade and assignment updated successfully.");
+        } catch (Exception e) {
+            logger.error("Error updating grade via AJAX for grade ID {}: {}", gradeId, e.getMessage(), e);
+            return Map.of("success", false, "error", e.getMessage());
         }
     }
 

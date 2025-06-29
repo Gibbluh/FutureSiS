@@ -2,6 +2,7 @@ package com.example.auth1.model;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.util.List;
 
 @Entity
 @Table(name = "subjects")
@@ -20,9 +21,24 @@ public class Subject {
     private int units;
     
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "course_id", nullable = false)
+    @JoinColumn(name = "course_id", nullable = true)
     @JsonIgnoreProperties("subjects")
     private Course course;
+    
+    @ManyToOne
+    @JoinColumn(name = "program_id", nullable = true)
+    private Program program;
+
+    @Column(nullable = true)
+    private Integer yearLevel;
+
+    @Column(nullable = true)
+    private Integer semester;
+
+    // Remove the direct section field and replace with SubjectSection relationship
+    @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("subject")
+    private List<SubjectSection> subjectSections;
     
     // Constructors
     public Subject() {}
@@ -73,6 +89,38 @@ public class Subject {
     
     public void setCourse(Course course) {
         this.course = course;
+    }
+
+    public Program getProgram() {
+        return program;
+    }
+
+    public void setProgram(Program program) {
+        this.program = program;
+    }
+
+    public Integer getYearLevel() {
+        return yearLevel;
+    }
+
+    public void setYearLevel(Integer yearLevel) {
+        this.yearLevel = yearLevel;
+    }
+
+    public Integer getSemester() {
+        return semester;
+    }
+
+    public void setSemester(Integer semester) {
+        this.semester = semester;
+    }
+
+    public List<SubjectSection> getSubjectSections() {
+        return subjectSections;
+    }
+
+    public void setSubjectSections(List<SubjectSection> subjectSections) {
+        this.subjectSections = subjectSections;
     }
 
     @Override

@@ -86,10 +86,8 @@ public class CustomStudentDetailsService implements UserDetailsService {
             logger.info("Birth date verified successfully");
             logger.info("Creating UserDetails for student {}", username);
             
-            UserDetails userDetails = User.withUsername(student.getStudentNumber())
-                    .password(student.getPassword())
-                    .roles("STUDENT")
-                    .build();
+            // Return custom user details
+            UserDetails userDetails = new CustomStudentDetails(student);
             
             logger.info("Student {} successfully authenticated", username);
             logger.info("=== Authentication process completed ===");

@@ -15,6 +15,10 @@ public class CustomStudentDetails implements UserDetails {
         this.student = student;
     }
 
+    public Student getStudent() {
+        return student;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(

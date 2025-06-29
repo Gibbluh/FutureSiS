@@ -17,4 +17,7 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
            "JOIN FETCH c.program p " +
            "WHERE p.id IN :programIds")
     List<Subject> findByProgramIds(@Param("programIds") List<Long> programIds);
+
+    @Query("SELECT s FROM Subject s WHERE (:programId IS NULL OR s.program.id = :programId) AND (:semester IS NULL OR s.semester = :semester) AND (:yearLevel IS NULL OR s.yearLevel = :yearLevel)")
+    List<Subject> findByProgramIdAndSemesterAndYearLevel(@Param("programId") Long programId, @Param("semester") Integer semester, @Param("yearLevel") Integer yearLevel);
 }

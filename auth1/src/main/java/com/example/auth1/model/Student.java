@@ -52,6 +52,24 @@ public class Student {
     @JoinColumn(name = "program_id")
     private Program program;
     
+    @ManyToOne
+    @JoinColumn(name = "section_id")
+    private Section section;
+    
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private java.util.List<Grade> grades = new java.util.ArrayList<>();
+    
+    @Column(nullable = false)
+    private String academicYear; // Student's original academic year (e.g., '2025-2026')
+    
+    private int rejectedApprovalCount = 0;
+    
+    @Column(nullable = false)
+    private Integer graduationStatus = 0; // 0 = not graduated, 1 = graduated
+    
+    @Column(nullable = false)
+    private boolean graduated = false;
+    
     // Constructors
     public Student() {
     }
@@ -184,6 +202,54 @@ public class Student {
     
     public void setProgram(Program program) {
         this.program = program;
+    }
+    
+    public Section getSection() {
+        return section;
+    }
+    
+    public void setSection(Section section) {
+        this.section = section;
+    }
+    
+    public java.util.List<Grade> getGrades() {
+        return grades;
+    }
+    
+    public void setGrades(java.util.List<Grade> grades) {
+        this.grades = grades;
+    }
+    
+    public String getAcademicYear() {
+        return academicYear;
+    }
+    
+    public void setAcademicYear(String academicYear) {
+        this.academicYear = academicYear;
+    }
+    
+    public int getRejectedApprovalCount() {
+        return rejectedApprovalCount;
+    }
+    
+    public void setRejectedApprovalCount(int count) {
+        this.rejectedApprovalCount = count;
+    }
+    
+    public Integer getGraduationStatus() {
+        return graduationStatus;
+    }
+    
+    public void setGraduationStatus(Integer graduationStatus) {
+        this.graduationStatus = graduationStatus;
+    }
+    
+    public boolean isGraduated() {
+        return graduated;
+    }
+    
+    public void setGraduated(boolean graduated) {
+        this.graduated = graduated;
     }
     
     @Override

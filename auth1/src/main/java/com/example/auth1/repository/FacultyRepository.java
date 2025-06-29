@@ -18,7 +18,8 @@ public interface FacultyRepository extends JpaRepository<Faculty, Long> {
 
     @Query("SELECT DISTINCT f FROM Faculty f " +
            "LEFT JOIN FETCH f.teachingAssignments ta " +
-           "LEFT JOIN FETCH ta.subject s " +
+           "LEFT JOIN FETCH ta.subjectSection ss " +
+           "LEFT JOIN FETCH ss.subject s " +
            "LEFT JOIN FETCH s.course c " +
            "LEFT JOIN FETCH c.program p " +
            "WHERE f.facultyId = :facultyId " +
@@ -33,7 +34,8 @@ public interface FacultyRepository extends JpaRepository<Faculty, Long> {
 
     @Query("SELECT DISTINCT f FROM Faculty f " +
            "LEFT JOIN FETCH f.teachingAssignments ta " +
-           "LEFT JOIN FETCH ta.subject s " +
+           "LEFT JOIN FETCH ta.subjectSection ss " +
+           "LEFT JOIN FETCH ss.subject s " +
            "LEFT JOIN FETCH s.course c " +
            "WHERE f.id = :id")
     Optional<Faculty> findByIdWithTeachingAssignments(@Param("id") Long id);
@@ -43,5 +45,7 @@ public interface FacultyRepository extends JpaRepository<Faculty, Long> {
     Optional<Faculty> findByEmail(String email);
 
     @Query("SELECT DISTINCT f FROM Faculty f LEFT JOIN FETCH f.facultyPrograms")
-    List<Faculty> findAllWithPrograms();
+    List<Faculty> findAllWithPrograms(); // Recommend caching this in the service layer with @Cacheable
+
+    List<Faculty> findByFacultyPrograms_Program_Id(Long programId);
 } 

@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 
 @Configuration
@@ -71,6 +72,7 @@ public class SecurityConfig {
             .securityMatcher("/admin/**")
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/login", "/admin/login?error=true").permitAll()
+                .requestMatchers("/admin/css/**", "/admin/js/**", "/admin/images/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN"))
             .formLogin(form -> form
                 .loginPage("/admin/login")
@@ -84,6 +86,8 @@ public class SecurityConfig {
                 .logoutUrl("/admin/logout")
                 .logoutSuccessUrl("/")
                 .permitAll())
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/admin/api/**", "/admin/subject-sections/create"))
             .authenticationProvider(adminAuthenticationProvider());
         
         return http.build();
@@ -144,9 +148,24 @@ public class SecurityConfig {
     public SecurityFilterChain defaultFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/home", "/css/**", "/js/**", "/images/**", "/error", "/forgot-password", "/reset-password").permitAll()
+                .requestMatchers(
+                    "/",
+                    "/home",
+                    "/login",
+                    "/register",
+                    "/about",
+                    "/css/**", 
+                    "/js/**", 
+                    "/images/**",
+                    "/webjars/**",
+                    "/forgot-password",
+                    "/reset-password"
+                ).permitAll()
+                .requestMatchers("/student/**").hasRole("STUDENT")
+                .requestMatchers("/faculty/**").hasRole("FACULTY")
                 .anyRequest().authenticated())
-            .csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**", "/api/**"));
         
         return http.build();
     }

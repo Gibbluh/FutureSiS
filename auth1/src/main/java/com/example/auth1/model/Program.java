@@ -14,6 +14,9 @@ public class Program {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(nullable = true, unique = false)
+    private String acronym;
+
     @OneToMany(mappedBy = "program", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonIgnoreProperties({"program"})
     private List<Course> courses;
@@ -40,6 +43,14 @@ public class Program {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getAcronym() {
+        return acronym;
+    }
+
+    public void setAcronym(String acronym) {
+        this.acronym = acronym;
     }
 
     public List<Course> getCourses() {

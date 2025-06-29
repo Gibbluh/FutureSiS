@@ -13,4 +13,7 @@ import org.springframework.stereotype.Repository;
 public interface ProgramRepository extends JpaRepository<Program, Long> {
     @Query("SELECT p FROM Program p LEFT JOIN FETCH p.courses WHERE p.id = :id")
     Optional<Program> findByIdWithCourses(@Param("id") Long id);
+
+    @Query("SELECT p FROM Program p WHERE p.name = :name")
+    Optional<Program> findByName(@Param("name") String name);
 }

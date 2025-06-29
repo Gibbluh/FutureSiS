@@ -3,7 +3,7 @@ package com.example.auth1.controller;
 import com.example.auth1.service.PasswordResetService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
+//import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,9 +21,9 @@ public class PasswordResetController {
     }
 
     @PostMapping("/reset-password")
-    public String resetPassword(@RequestParam String email, 
-                              @RequestParam String userType,
-                              RedirectAttributes redirectAttributes) {
+    public String resetPassword(@RequestParam String email,
+                            @RequestParam String userType,
+                            RedirectAttributes redirectAttributes) {
         boolean success = false;
         
         if ("student".equals(userType)) {
@@ -33,10 +33,10 @@ public class PasswordResetController {
         }
 
         if (success) {
-            redirectAttributes.addFlashAttribute("message", 
+            redirectAttributes.addFlashAttribute("message",
                 "Password reset email has been sent to your email address.");
         } else {
-            redirectAttributes.addFlashAttribute("error", 
+            redirectAttributes.addFlashAttribute("error",
                 "No account found with the provided email address.");
         }
 

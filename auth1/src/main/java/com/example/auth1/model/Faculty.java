@@ -31,10 +31,10 @@ public class Faculty {
     @Column(nullable = false)
     private Role role = Role.FACULTY;
 
-    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<FacultyProgram> facultyPrograms = new HashSet<>();
 
-    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<TeachingAssignment> teachingAssignments = new HashSet<>();
 
     @Column(name = "phone_number")

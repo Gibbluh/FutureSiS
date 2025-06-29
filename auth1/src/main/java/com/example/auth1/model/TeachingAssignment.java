@@ -6,7 +6,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = "teaching_assignments", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"faculty_id", "subject_id", "academic_year", "semester"})
+    @UniqueConstraint(columnNames = {"faculty_id", "subject_section_id"})
 })
 public class TeachingAssignment {
     @Id
@@ -19,24 +19,16 @@ public class TeachingAssignment {
     private Faculty faculty;
     
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "subject_id", nullable = false)
-    @JsonIgnoreProperties({"course"})
-    private Subject subject;
-    
-    @Column(nullable = false)
-    private String academicYear;
-    
-    @Column(nullable = false)
-    private Integer semester;
+    @JoinColumn(name = "subject_section_id", nullable = false)
+    @JsonIgnoreProperties({"teachingAssignments", "subject", "section"})
+    private SubjectSection subjectSection;
 
     // Constructors
     public TeachingAssignment() {}
     
-    public TeachingAssignment(Faculty faculty, Subject subject, String academicYear, Integer semester) {
+    public TeachingAssignment(Faculty faculty, SubjectSection subjectSection) {
         this.setFaculty(faculty);
-        this.setSubject(subject);
-        this.academicYear = academicYear;
-        this.semester = semester;
+        this.setSubjectSection(subjectSection);
     }
 
     // Getters and Setters
@@ -68,28 +60,29 @@ public class TeachingAssignment {
         }
     }
 
-    public Subject getSubject() {
-        return subject;
+    public SubjectSection getSubjectSection() {
+        return subjectSection;
     }
 
-    public void setSubject(Subject subject) {
-        this.subject = subject;
+    public void setSubjectSection(SubjectSection subjectSection) {
+        this.subjectSection = subjectSection;
+    }
+
+    // Convenience methods to access subject, section, academic year, and semester
+    public Subject getSubject() {
+        return subjectSection != null ? subjectSection.getSubject() : null;
+    }
+
+    public Section getSection() {
+        return subjectSection != null ? subjectSection.getSection() : null;
     }
 
     public String getAcademicYear() {
-        return academicYear;
-    }
-
-    public void setAcademicYear(String academicYear) {
-        this.academicYear = academicYear;
+        return subjectSection != null ? subjectSection.getAcademicYear() : null;
     }
 
     public Integer getSemester() {
-        return semester;
-    }
-
-    public void setSemester(Integer semester) {
-        this.semester = semester;
+        return subjectSection != null ? subjectSection.getSemester() : null;
     }
 
     @Override

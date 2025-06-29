@@ -12,6 +12,9 @@ public class Course {
     private Long id;
     
     @Column(nullable = false)
+    private String name;
+    
+    @Column(nullable = false)
     private int year;
     
     @Column(nullable = false)
@@ -29,7 +32,8 @@ public class Course {
     // Constructors
     public Course() {}
     
-    public Course(int year, int semester, Program program) {
+    public Course(String name, int year, int semester, Program program) {
+        this.name = name;
         this.year = year;
         this.semester = semester;
         this.program = program;
@@ -42,6 +46,14 @@ public class Course {
     
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
     }
     
     public int getYear() {

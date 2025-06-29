@@ -30,5 +30,13 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
         @Param("subject") Subject subject,
         @Param("semester") Integer semester);
 
+    // Find students by section
+    List<Student> findBySectionId(Long sectionId);
+
     Optional<Student> findByEmail(String email);
+
+    boolean existsByEmail(String email);
+
+    List<Student> findByGraduationStatusNot(int status);
+    List<Student> findByGraduationStatus(int status);
 }

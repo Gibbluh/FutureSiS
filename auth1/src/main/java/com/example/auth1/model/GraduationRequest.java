@@ -4,11 +4,8 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-    name = "semester_approval_requests",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"student_id", "academicYear", "semester"})
-)
-public class SemesterApprovalRequest {
+@Table(name = "graduation_requests")
+public class GraduationRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -16,15 +13,6 @@ public class SemesterApprovalRequest {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
-
-    @Column(nullable = false)
-    private String academicYear;
-
-    @Column(nullable = false)
-    private Integer semester;
-
-    @Column(nullable = false)
-    private Integer yearLevel;
 
     @Column(nullable = false)
     private LocalDateTime requestDate;
@@ -36,10 +24,6 @@ public class SemesterApprovalRequest {
     @Column
     private LocalDateTime approvalDate;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "approved_by")
-    private Admin approvedBy;
-
     @Column
     private String comments;
 
@@ -50,12 +34,10 @@ public class SemesterApprovalRequest {
     }
 
     // Constructors
-    public SemesterApprovalRequest() {}
+    public GraduationRequest() {}
 
-    public SemesterApprovalRequest(Student student, String academicYear, Integer semester) {
+    public GraduationRequest(Student student) {
         this.student = student;
-        this.academicYear = academicYear;
-        this.semester = semester;
         this.requestDate = LocalDateTime.now();
     }
 
@@ -74,30 +56,6 @@ public class SemesterApprovalRequest {
 
     public void setStudent(Student student) {
         this.student = student;
-    }
-
-    public String getAcademicYear() {
-        return academicYear;
-    }
-
-    public void setAcademicYear(String academicYear) {
-        this.academicYear = academicYear;
-    }
-
-    public Integer getSemester() {
-        return semester;
-    }
-
-    public void setSemester(Integer semester) {
-        this.semester = semester;
-    }
-
-    public Integer getYearLevel() {
-        return yearLevel;
-    }
-
-    public void setYearLevel(Integer yearLevel) {
-        this.yearLevel = yearLevel;
     }
 
     public LocalDateTime getRequestDate() {
@@ -122,14 +80,6 @@ public class SemesterApprovalRequest {
 
     public void setApprovalDate(LocalDateTime approvalDate) {
         this.approvalDate = approvalDate;
-    }
-
-    public Admin getApprovedBy() {
-        return approvedBy;
-    }
-
-    public void setApprovedBy(Admin approvedBy) {
-        this.approvedBy = approvedBy;
     }
 
     public String getComments() {

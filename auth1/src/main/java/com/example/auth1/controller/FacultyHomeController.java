@@ -12,6 +12,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import jakarta.transaction.Transactional;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,16 +27,28 @@ public class FacultyHomeController {
     private final SubjectRepository subjectRepository;
     private final StudentRepository studentRepository;
     private final GradeRepository gradeRepository;
+    private final TeachingAssignmentRepository teachingAssignmentRepository;
+    private final SubjectSectionRepository subjectSectionRepository;
+    private final SectionRepository sectionRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public FacultyHomeController(
             FacultyRepository facultyRepository,
             SubjectRepository subjectRepository,
             StudentRepository studentRepository,
-            GradeRepository gradeRepository) {
+            GradeRepository gradeRepository,
+            TeachingAssignmentRepository teachingAssignmentRepository,
+            SubjectSectionRepository subjectSectionRepository,
+            SectionRepository sectionRepository,
+            PasswordEncoder passwordEncoder) {
         this.facultyRepository = facultyRepository;
         this.subjectRepository = subjectRepository;
         this.studentRepository = studentRepository;
         this.gradeRepository = gradeRepository;
+        this.teachingAssignmentRepository = teachingAssignmentRepository;
+        this.subjectSectionRepository = subjectSectionRepository;
+        this.sectionRepository = sectionRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/login")
@@ -74,22 +88,55 @@ public class FacultyHomeController {
             logger.info("- Teaching Assignments: {}", 
                 faculty.getTeachingAssignments() != null ? faculty.getTeachingAssignments().size() : 0);
             
-            // Log teaching assignments for debugging
+            // Group teaching assignments by subject for better display
+            Map<Subject, List<TeachingAssignment>> assignmentsBySubject = new HashMap<>();
+            Set<String> uniqueRooms = new HashSet<>();
+            Set<String> uniqueSchedules = new HashSet<>();
             if (faculty.getTeachingAssignments() != null) {
-                faculty.getTeachingAssignments().forEach(assignment -> {
-                    if (assignment.getSubject() != null) {
-                        logger.info("Teaching Assignment - Subject: {}, Code: {}, Year: {}, Semester: {}",
-                            assignment.getSubject().getName(),
-                            assignment.getSubject().getCode(),
-                            assignment.getSubject().getCourse() != null ? assignment.getSubject().getCourse().getYear() : "N/A",
-                            assignment.getSemester());
-                    } else {
-                        logger.warn("Found teaching assignment with null subject for faculty: {}", facultyId);
+                for (TeachingAssignment assignment : faculty.getTeachingAssignments()) {
+                    Subject subject = assignment.getSubject();
+                    if (subject != null) {
+                        assignmentsBySubject.computeIfAbsent(subject, k -> new ArrayList<>()).add(assignment);
                     }
-                });
+                    SubjectSection ss = assignment.getSubjectSection();
+                    if (ss != null) {
+                        if (ss.getRoom() != null && !ss.getRoom().isEmpty()) {
+                            uniqueRooms.add(ss.getRoom());
+                        }
+                        if (ss.getSchedule() != null && !ss.getSchedule().isEmpty()) {
+                            uniqueSchedules.add(ss.getSchedule());
+                        }
+                    }
+                }
             }
             
+            // Get all program IDs the faculty is assigned to
+            List<Long> programIds = faculty.getFacultyPrograms().stream()
+                .map(fp -> fp.getProgram().getId())
+                .distinct()
+                .collect(Collectors.toList());
+
+            // Get all sections for these programs
+            List<Section> uniqueSections = sectionRepository.findByProgramIdIn(programIds);
+
+            // Build a map of subjectSectionId to student count for all teaching assignments
+            Map<Long, Integer> subjectSectionStudentCounts = new HashMap<>();
+            if (faculty.getTeachingAssignments() != null) {
+                for (TeachingAssignment assignment : faculty.getTeachingAssignments()) {
+                    SubjectSection ss = assignment.getSubjectSection();
+                    if (ss != null && !subjectSectionStudentCounts.containsKey(ss.getId())) {
+                        int count = gradeRepository.findBySubjectSectionIdWithStudentDetails(ss.getId()).size();
+                        subjectSectionStudentCounts.put(ss.getId(), count);
+                    }
+                }
+            }
+
             model.addAttribute("faculty", faculty);
+            model.addAttribute("assignmentsBySubject", assignmentsBySubject);
+            model.addAttribute("uniqueRooms", uniqueRooms);
+            model.addAttribute("uniqueSchedules", uniqueSchedules);
+            model.addAttribute("uniqueSections", uniqueSections);
+            model.addAttribute("subjectSectionStudentCounts", subjectSectionStudentCounts);
             return "faculty/faculty_home";
             
         } catch (Exception e) {
@@ -100,9 +147,9 @@ public class FacultyHomeController {
         }
     }
 
-    @GetMapping("/subjects/{subjectId}/students")
+    @GetMapping("/subjects/{subjectId}/sections")
     @ResponseBody
-    public ResponseEntity<?> getStudentsForSubject(
+    public ResponseEntity<?> getSectionsForSubject(
             @PathVariable Long subjectId,
             @RequestParam String academicYear,
             @RequestParam Integer semester) {
@@ -113,65 +160,36 @@ public class FacultyHomeController {
             Faculty faculty = facultyRepository.findByFacultyId(facultyId)
                 .orElseThrow(() -> new RuntimeException("Faculty not found"));
 
-            // Verify that this faculty is assigned to this subject
-            boolean isAssigned = faculty.getTeachingAssignments().stream()
-                .anyMatch(assignment -> 
-                    assignment.getSubject().getId().equals(subjectId) &&
-                    assignment.getAcademicYear().equals(academicYear) &&
-                    assignment.getSemester().equals(semester));
+            // Get all program IDs the faculty is assigned to
+            List<Long> programIds = faculty.getFacultyPrograms().stream()
+                .map(fp -> fp.getProgram().getId())
+                .distinct()
+                .collect(Collectors.toList());
 
-            if (!isAssigned) {
-                return ResponseEntity.badRequest()
-                    .body(Map.of("error", "You are not assigned to teach this subject"));
-            }
+            // Get all sections for these programs
+            List<Section> sections = sectionRepository.findByProgramIdIn(programIds);
 
-            // Get the subject
-            Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-            // Get students enrolled in this subject
-            List<Student> enrolledStudents = studentRepository.findBySubjectAndYearAndSemester(
-                subject, semester);
-
-            // Get grades for these students
-            Map<Long, Grade> studentGrades = gradeRepository
-                .findBySubjectIdAndAcademicYearAndSemester(subjectId, academicYear, semester)
-                .stream()
-                .collect(Collectors.toMap(
-                    grade -> grade.getStudent().getId(),
-                    grade -> grade
-                ));
-
-            // Build response
-            List<Map<String, Object>> studentList = enrolledStudents.stream()
-                .map(student -> {
-                    Map<String, Object> studentMap = new HashMap<>();
-                    studentMap.put("id", student.getId());
-                    studentMap.put("studentNumber", student.getStudentNumber());
-                    studentMap.put("firstName", student.getFirstName());
-                    studentMap.put("lastName", student.getLastName());
-                    studentMap.put("program", student.getProgram().getName());
-                    studentMap.put("yearLevel", student.getEnrollmentYear());
-                    
-                    // Add grade if exists
-                    Grade grade = studentGrades.get(student.getId());
-                    if (grade != null) {
-                        studentMap.put("grade", grade.getRawGrade());
-                    }
-                    
-                    return studentMap;
+            // Build response with sections
+            List<Map<String, Object>> sectionList = sections.stream()
+                .map(section -> {
+                    Map<String, Object> sectionMap = new HashMap<>();
+                    sectionMap.put("sectionId", section.getId());
+                    sectionMap.put("sectionName", section.getName());
+                    sectionMap.put("yearLevel", section.getYearLevel());
+                    sectionMap.put("programName", section.getProgram().getName());
+                    return sectionMap;
                 })
                 .collect(Collectors.toList());
 
-            return ResponseEntity.ok(Map.of("students", studentList));
+            return ResponseEntity.ok(Map.of("sections", sectionList));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "Error fetching students: " + e.getMessage()));
+                .body(Map.of("error", "Error fetching sections: " + e.getMessage()));
         }
     }
 
-    @GetMapping("/grades/{subjectId}")
-    public String manageGrades(@PathVariable Long subjectId, Model model) {
+    @GetMapping("/grades/{subjectSectionId}")
+    public String manageGrades(@PathVariable Long subjectSectionId, Model model) {
         try {
             // Get current faculty
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -181,45 +199,32 @@ public class FacultyHomeController {
             Faculty faculty = facultyRepository.findByFacultyIdWithTeachingAssignments(facultyId)
                 .orElseThrow(() -> new RuntimeException("Faculty not found"));
 
-            // Get the subject
-            Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+            // Get the subject section
+            SubjectSection subjectSection = subjectSectionRepository.findById(subjectSectionId)
+                .orElseThrow(() -> new RuntimeException("Subject Section not found"));
 
-            // Get current academic year and semester from the subject's course
-            String currentAcademicYear = getCurrentAcademicYear();
-            Integer subjectSemester = subject.getCourse().getSemester();
-
-            logger.info("Checking teaching assignment for faculty {} subject {} year {} semester {}", 
-                facultyId, subjectId, currentAcademicYear, subjectSemester);
-
-            // Check if faculty is assigned to this subject in any semester
+            // Check if faculty is assigned to this subject section
             boolean isAssigned = faculty.getTeachingAssignments().stream()
-                .anyMatch(a -> a.getSubject().getId().equals(subjectId));
+                .anyMatch(a -> a.getSubjectSection().getId().equals(subjectSectionId));
 
             if (!isAssigned) {
-                throw new RuntimeException("You are not assigned to teach this subject");
+                throw new RuntimeException("You are not assigned to teach this subject section");
             }
 
-            // Get students and their grades using the subject's semester
-            List<Student> students = studentRepository.findBySubjectAndYearAndSemester(
-                subject, subjectSemester);
-
-            List<Grade> grades = gradeRepository.findBySubjectIdAndAcademicYearAndSemester(
-                subjectId, currentAcademicYear, subjectSemester);
-
+            // Get students who have a grade for this subject section (even if they moved up)
+            List<Grade> grades = gradeRepository.findBySubjectSectionIdWithStudentDetails(subjectSectionId);
+            List<Student> students = grades.stream().map(Grade::getStudent).distinct().collect(Collectors.toList());
             Map<Long, Grade> studentGrades = grades.stream()
                 .collect(Collectors.toMap(
                     g -> g.getStudent().getId(),
                     g -> g,
                     (existing, replacement) -> existing
                 ));
-
-            model.addAttribute("subject", subject);
+            model.addAttribute("subjectSection", subjectSection);
             model.addAttribute("students", students);
             model.addAttribute("grades", studentGrades);
-            model.addAttribute("academicYear", currentAcademicYear);
-            model.addAttribute("semester", subjectSemester);
-
+            model.addAttribute("academicYear", subjectSection.getAcademicYear());
+            model.addAttribute("semester", subjectSection.getSemester());
             return "faculty/manage_grades";
         } catch (Exception e) {
             logger.error("Error in manageGrades: {}", e.getMessage(), e);
@@ -232,7 +237,7 @@ public class FacultyHomeController {
     @ResponseBody
     public ResponseEntity<?> updateGrade(
             @RequestParam Long studentId,
-            @RequestParam Long subjectId,
+            @RequestParam Long subjectSectionId,
             @RequestParam Double grade) {
         try {
             // Get current faculty
@@ -243,24 +248,13 @@ public class FacultyHomeController {
             Faculty faculty = facultyRepository.findByFacultyIdWithTeachingAssignments(facultyId)
                 .orElseThrow(() -> new RuntimeException("Faculty not found"));
 
-            // Get the subject to get its semester
-            Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-
-            // Get current academic year and semester from the subject's course
-            String academicYear = getCurrentAcademicYear();
-            Integer semester = subject.getCourse().getSemester();
-
-            logger.info("Checking teaching assignment for faculty {} subject {} year {} semester {}", 
-                facultyId, subjectId, academicYear, semester);
-
-            // Check if faculty is assigned to this subject in any semester
+            // Check if faculty is assigned to this subject section
             boolean isAssigned = faculty.getTeachingAssignments().stream()
-                .anyMatch(assignment -> assignment.getSubject().getId().equals(subjectId));
+                .anyMatch(assignment -> assignment.getSubjectSection().getId().equals(subjectSectionId));
 
             if (!isAssigned) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "You are not assigned to teach this subject"));
+                    .body(Map.of("error", "You are not assigned to teach this subject section"));
             }
 
             // Validate grade
@@ -269,13 +263,17 @@ public class FacultyHomeController {
                     .body(Map.of("error", "Grade must be between 0 and 100"));
             }
 
+            // Get the subject section
+            SubjectSection subjectSection = subjectSectionRepository.findById(subjectSectionId)
+                .orElseThrow(() -> new RuntimeException("Subject Section not found"));
+
             // Get or create grade
             Grade gradeEntity = gradeRepository
-                .findByStudentIdAndSubjectId(studentId, subjectId, academicYear, semester)
+                .findByStudentIdAndSubjectSectionId(studentId, subjectSectionId)
                 .orElseGet(() -> {
                     Student student = studentRepository.findById(studentId)
                         .orElseThrow(() -> new RuntimeException("Student not found"));
-                    return new Grade(student, subject, grade, academicYear, semester);
+                    return new Grade(student, subjectSection, grade);
                 });
 
             // Update grade
@@ -295,12 +293,95 @@ public class FacultyHomeController {
         }
     }
 
-    private String getCurrentAcademicYear() {
-        int year = LocalDate.now().getYear();
-        return year + "-" + (year + 1);
+    @GetMapping("/subject-sections/{subjectSectionId}/students/download")
+    public void downloadStudentListExcel(@PathVariable Long subjectSectionId, HttpServletResponse response) throws Exception {
+        SubjectSection subjectSection = subjectSectionRepository.findById(subjectSectionId)
+            .orElseThrow(() -> new RuntimeException("Subject Section not found"));
+        // Get all students who have a grade for this subject section
+        List<Grade> grades = gradeRepository.findBySubjectSectionIdWithStudentDetails(subjectSectionId);
+        List<Student> students = grades.stream().map(Grade::getStudent).distinct().collect(java.util.stream.Collectors.toList());
+
+        org.apache.poi.ss.usermodel.Workbook workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook();
+        org.apache.poi.ss.usermodel.Sheet sheet = workbook.createSheet("Students");
+        org.apache.poi.ss.usermodel.Row header = sheet.createRow(0);
+        header.createCell(0).setCellValue("Student Number");
+        header.createCell(1).setCellValue("Last Name");
+        header.createCell(2).setCellValue("First Name");
+        header.createCell(3).setCellValue("Program");
+        int rowIdx = 1;
+        for (Student student : students) {
+            org.apache.poi.ss.usermodel.Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(student.getStudentNumber());
+            row.createCell(1).setCellValue(student.getLastName());
+            row.createCell(2).setCellValue(student.getFirstName());
+            row.createCell(3).setCellValue(student.getProgram() != null ? student.getProgram().getName() : "");
+        }
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=students_section_" + subjectSectionId + ".xlsx");
+        workbook.write(response.getOutputStream());
+        workbook.close();
     }
 
-    private Integer getCurrentSemester() {
-        return 1; // Default to first semester
+    @GetMapping("/change-password")
+    public String showChangePasswordForm() {
+        return "faculty/faculty_change_password";
+    }
+
+    @PostMapping("/change-password")
+    public String changePassword(@RequestParam String oldPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 Model model,
+                                 RedirectAttributes redirectAttributes) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String facultyId = auth.getName();
+        Faculty faculty = facultyRepository.findByFacultyId(facultyId)
+                .orElseThrow(() -> new RuntimeException("Faculty not found"));
+        if (!passwordEncoder.matches(oldPassword, faculty.getPassword())) {
+            model.addAttribute("error", "Old password is incorrect.");
+            return "faculty/faculty_change_password";
+        }
+        if (!newPassword.equals(confirmPassword)) {
+            model.addAttribute("error", "New passwords do not match.");
+            return "faculty/faculty_change_password";
+        }
+        faculty.setPassword(passwordEncoder.encode(newPassword));
+        facultyRepository.save(faculty);
+        redirectAttributes.addFlashAttribute("success", "Password changed successfully!");
+        return "redirect:/faculty/home";
+    }
+
+    @GetMapping("/profile")
+    public String showProfile(Model model) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String facultyId = auth.getName();
+        Faculty faculty = facultyRepository.findByFacultyId(facultyId)
+            .orElseThrow(() -> new RuntimeException("Faculty not found"));
+        model.addAttribute("faculty", faculty);
+        return "faculty/faculty_profile";
+    }
+
+    @PostMapping("/change-id")
+    @ResponseBody
+    public Map<String, Object> changeFacultyId(@RequestParam String newFacultyId, @RequestParam String currentPassword) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String currentFacultyId = auth.getName();
+        Faculty faculty = facultyRepository.findByFacultyId(currentFacultyId)
+            .orElse(null);
+        if (faculty == null) {
+            return Map.of("success", false, "message", "Faculty not found.");
+        }
+        if (!passwordEncoder.matches(currentPassword, faculty.getPassword())) {
+            return Map.of("success", false, "message", "Incorrect password.");
+        }
+        if (newFacultyId.equals(currentFacultyId)) {
+            return Map.of("success", false, "message", "New Faculty ID must be different.");
+        }
+        if (facultyRepository.findByFacultyId(newFacultyId).isPresent()) {
+            return Map.of("success", false, "message", "Faculty ID already taken.");
+        }
+        faculty.setFacultyId(newFacultyId);
+        facultyRepository.save(faculty);
+        return Map.of("success", true);
     }
 } 
